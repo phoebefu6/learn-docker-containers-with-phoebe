@@ -1,0 +1,17 @@
+{
+ "name": "uvicorn",
+ "version": "0.54.0",
+ "license": "BSD-3-Clause",
+ "files": [
+  {
+   "filename": "uvicorn-0.54.0-py3-none-any.whl",
+   "size": 87427,
+   "upload_time": "2026-09-25T06:52:35"
+  },
+  {
+   "filename": "uvicorn-0.54.0.tar.gz",
+   "size": 112283,
+   "upload_time": "2026-09-25T06:52:37"
+  }
+ ]
+}

@@ -1,0 +1,17 @@
+{
+ "name": "pydantic",
+ "version": "2.14.3",
+ "license": "MIT",
+ "files": [
+  {
+   "filename": "pydantic-2.14.3-py3-none-any.whl",
+   "size": 494071,
+   "upload_time": "2026-11-05T09:17:02"
+  },
+  {
+   "filename": "pydantic-2.14.3.tar.gz",
+   "size": 925636,
+   "upload_time": "2026-11-05T09:17:04"
+  }
+ ]
+}

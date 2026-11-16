@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Session 4 of 6. A layer cache lab computed in the browser: edit a Dockerfile, change one file, and see which layers rebuild under Docker's documented cache rules, how long the rebuild takes, how big the image ends up and what a hadolint-style lint finds. Then break it on purpose.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="The layer cache lab - learn docker containers with phoebe">
+<meta property="og:description" content="Session 4 of 6. Six Dockerfiles for one Python API, one changed file, and the rebuild time falls from 52.1 s to 0.5 s. Then two anti-levers put it back.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/courses/04-the-layer-cache-lab.html">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The layer cache lab - learn docker containers with phoebe">
+<meta name="twitter:description" content="Session 4 of 6. Docker's cache rules, computed in your browser on six Dockerfiles, with two break buttons.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Session 4 · The layer cache lab - learn docker containers with phoebe</title>
+<link rel="stylesheet" href="../assets/style.css?v=1">
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="wrap">
+    <span class="crumb"><a href="../index.html">learn-docker-containers-with-phoebe</a> / Session 4 of 6</span>
+    <button class="btn" id="toggle-all" type="button">Expand all</button>
+    <button class="btn primary" id="zoom-toggle" type="button">Projector zoom: off</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Learn Docker &amp; Containers with Phoebe · Session 4 of 6</div>
+    <h1>The layer <span class="accent">cache lab</span></h1>
+    <p class="sub">Stackyard's API has a Dockerfile now. The team's first one, written before session 3, still sits in a few branches, and it takes the better part of a minute to rebuild after a one-line change, which is how people quietly go back to running the API on their laptops. Tonight a lab in this page reads six versions of that Dockerfile, applies Docker's documented cache rules to them, and tells you which layers rebuild when one file changes, how long the rebuild takes, how big the image ends up and what a lint finds. Then it gives you two buttons that make everything worse.</p>
+    <div class="chip-row">
+      <span class="chip level">🟠 Bench night</span>
+      <span class="chip audience">Bring your session 3 Dockerfile</span>
+      <span class="chip audience">Everything runs in the page</span>
+      <span class="chip time">45 min</span>
+    </div>
+    <div class="agenda">
+      <span class="a1" style="flex:1">0-3 · Welcome</span>
+      <span class="a2" style="flex:3">3-14 · The cache rules</span>
+      <span class="a3" style="flex:6">14-40 · Six rungs and two anti-levers</span>
+      <span class="a4" style="flex:1">40-45 · Q&amp;A</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="intro">
+    <div class="section-kicker">
+      <span class="klabel">Part 0</span>
+      <h2>Where we start</h2>
+    </div>
+    <p class="lede">The second half of the course question is "how long would the rebuild take?". Tonight it gets a number. The lab below is not a recording: it parses whatever Dockerfile is in its edit box, works out the build context from the <code>.dockerignore</code>, walks every instruction against Docker's cache rules for the file you say changed, and adds up the cost. What it computes for real is the cache walk, the layer list and the lint. What it has to model is time, because your laptop, network and disk are not in the page. Every modelled number is labelled on the widget. Constructed Stackyard example throughout.</p>
+
+    <div class="legend">
+      <span class="pill">🎫 Clear all three quiz questions to stamp your passport</span>
+      <span class="pill">Live = presented in the 45 minutes</span>
+      <span class="pill">Self-study = the full depth, after class</span>
+      <span class="pill">★ Build-along = do it yourself, in the page</span>
+    </div>
+
+    <div class="callout win">
+      <p><strong>★ What you walk out with tonight.</strong> A cache-ordered Dockerfile for the Stackyard API, measured: from a modelled 52.1 seconds to 0.5 seconds to rebuild after a code change, from 1224.42 MB to 127.93 MB of image, from nine lint findings to none. And the two mistakes that undo it, felt once on purpose so you recognise them in a review.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-1">
+    <div class="section-kicker">
+      <span class="klabel">Part 1 · covers how the build cache decides</span>
+      <h2>The cache rules, as the lab applies them</h2>
+      <span class="tag concept">6 min live</span>
+    </div>
+    <p class="lede">Docker builds an image one instruction at a time and, before running each one, looks for a cached layer from an earlier build that matches it exactly. The rules for "matches" are short, and almost every slow build traces back to one of them. The figure is the same one-line change to <code>app/scoring.py</code> meeting two orderings of the same Dockerfile.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two orderings of the Stackyard Dockerfile after a change to app/scoring.py. On the left, the naive order: FROM and WORKDIR come from the cache, then COPY . . copies the changed file, so its checksum differs and it is invalidated, and every instruction after it rebuilds, including the apt install and the pip install: 1 of 4 build steps cached, 52.1 seconds modelled. On the right, the dependency-first order: FROM, WORKDIR, the apt install, COPY requirements.txt and the pip install all come from the cache because none of them touches the changed file; only COPY . . and the metadata lines after it rebuild: 4 of 5 steps cached, 0.5 seconds modelled.">
+        <defs>
+          <filter id="s4aSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="17" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s4aHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+        </defs>
+        <style>
+          .s4aH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s4aC { font: 600 11px ui-monospace, Menlo, monospace; fill: #0E1030; }
+          .s4aS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s4aB { font: 800 11px Inter, sans-serif; fill: #0E1030; }
+          .s4aA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s4aV { font: 800 18px Inter, sans-serif; fill: #01005E; }
+          .s4aN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s4aH" x="40" y="26">NAIVE ORDER</text>
+        <text class="s4aH" x="470" y="26">DEPENDENCY LAYER FIRST</text>
+
+        <g filter="url(#s4aSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="40" y="40" width="370" height="26" rx="6" fill="#EEF1FD"/>
+          <rect x="40" y="72" width="370" height="26" rx="6" fill="#EEF1FD"/>
+          <rect x="40" y="104" width="370" height="26" rx="6" fill="#FF9F5A"/>
+          <rect x="40" y="136" width="370" height="26" rx="6" fill="url(#s4aHc)"/>
+          <rect x="40" y="168" width="370" height="26" rx="6" fill="url(#s4aHc)"/>
+          <rect x="40" y="200" width="370" height="26" rx="6" fill="url(#s4aHc)"/>
+
+          <rect x="470" y="40" width="370" height="26" rx="6" fill="#EEF1FD"/>
+          <rect x="470" y="72" width="370" height="26" rx="6" fill="#EEF1FD"/>
+          <rect x="470" y="104" width="370" height="26" rx="6" fill="#EEF1FD"/>
+          <rect x="470" y="136" width="370" height="26" rx="6" fill="#EEF1FD"/>
+          <rect x="470" y="168" width="370" height="26" rx="6" fill="#EEF1FD"/>
+          <rect x="470" y="200" width="370" height="26" rx="6" fill="#FF9F5A"/>
+          <rect x="470" y="232" width="370" height="26" rx="6" fill="url(#s4aHc)"/>
+
+          <rect x="40" y="282" width="20" height="14" rx="3" fill="#EEF1FD"/>
+          <rect x="200" y="282" width="20" height="14" rx="3" fill="#FF9F5A"/>
+          <rect x="420" y="282" width="20" height="14" rx="3" fill="url(#s4aHc)"/>
+        </g>
+
+        <text class="s4aC" x="52" y="58">FROM python:latest</text>
+        <text class="s4aC" x="52" y="90">WORKDIR /app</text>
+        <text class="s4aC" x="52" y="122">COPY . .</text>
+        <text class="s4aB" x="398" y="122" text-anchor="end">copies the changed file</text>
+        <text class="s4aC" x="52" y="154">RUN apt-get ... curl</text>
+        <text class="s4aC" x="52" y="186">RUN pip install -r ...</text>
+        <text class="s4aC" x="52" y="218">ENV, EXPOSE, CMD</text>
+
+        <text class="s4aC" x="482" y="58">FROM python:latest</text>
+        <text class="s4aC" x="482" y="90">WORKDIR /app</text>
+        <text class="s4aC" x="482" y="122">RUN apt-get ... curl</text>
+        <text class="s4aC" x="482" y="154">COPY requirements.txt .</text>
+        <text class="s4aC" x="482" y="186">RUN pip install -r ...</text>
+        <text class="s4aC" x="482" y="218">COPY . .</text>
+        <text class="s4aB" x="828" y="218" text-anchor="end">copies the changed file</text>
+        <text class="s4aC" x="482" y="250">ENV, EXPOSE, CMD</text>
+
+        <text class="s4aS" x="66" y="294">from the cache</text>
+        <text class="s4aS" x="226" y="294">checksum differs: invalidated</text>
+        <text class="s4aS" x="446" y="294">rebuilt because something above it was</text>
+
+        <text class="s4aV" x="40" y="336">52.1 s</text>
+        <text class="s4aS" x="112" y="336">1 of 4 build steps cached</text>
+        <text class="s4aV" x="470" y="336">0.5 s</text>
+        <text class="s4aS" x="530" y="336">4 of 5 build steps cached</text>
+
+        <text class="s4aN" x="40" y="366">Rebuild after a change to app/scoring.py; times are the lab's modelled seconds. Constructed Stackyard example.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - same files, same packages: the only difference is where the line that copies the changing file sits</figcaption>
+    </figure>
+
+    <details class="card" open>
+      <summary><span class="mode live">Live</span>Four rules, read at Docker's documentation<span class="mini">4 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>1. Each instruction is matched against the cache in order.</strong> "If no cached layer matches the instruction exactly, the cache is invalidated."</p>
+        <p><strong>2. COPY and ADD look at the files.</strong> For these, the builder computes a checksum from the copied files' metadata and contents, and "the cache is invalidated if the file metadata has changed for any of the files involved". The modification time alone does not count: touching a file without changing it leaves the cache intact.</p>
+        <p><strong>3. RUN does not look at anything outside its own text.</strong> "The cache for RUN instructions isn't invalidated automatically between builds." A cached <code>RUN pip install -r requirements.txt</code> does not notice that PyPI has a newer pandas. It reruns only when something above it was invalidated.</p>
+        <p><strong>4. Invalidation flows downhill.</strong> "Once a layer changes, then all downstream layers need to be rebuilt as well", even if they would build exactly the same thing. That is the rule the figure shows, and the reason line order is a performance decision.</p>
+        <p>The lab applies these four rules, plus one more from the multi-stage documentation: "BuildKit only builds the stages that the target stage depends on." A stage nobody copies from is skipped.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>What the lab computes, what it models, and what it leaves out<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>Computed for real:</strong> the parse of the Dockerfile (instructions, line continuations, stages, <code>COPY --from</code>), the build context after <code>.dockerignore</code> (Go-style globs, <code>**</code>, <code>!</code> exceptions, last match wins, as Docker documents them), which files each COPY picks up, the cache walk for the changed file, the layer list, and thirteen lint rules, each with a unit test that fires it and one that passes.</p>
+        <p><strong>Real, read at source:</strong> the base image sizes (Docker Hub, linux/amd64, compressed, read 2026-11-16) and the Python package sizes (PyPI wheel files for Python 3.12 on x86_64, read the same day). Image size is the compressed base plus the layer sizes, so treat it as approximate.</p>
+        <p><strong>Modelled, printed under the widget:</strong> every time in seconds, every apt and apk package size, and the Stackyard project files. A rebuild re-sends only the changed file, as BuildKit's incremental context transfer does. Your own builds will differ; the ordering of the rungs is the claim, not the decimals.</p>
+        <p><strong>Left out:</strong> remote builders, cache exported to a registry, <code>ARG</code> values changing between builds, a changed instruction text (the lab changes files, not the Dockerfile), and anything about the network.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>Docker's own advice, in Docker's own order.</strong> The documentation page "Optimize cache usage in builds" gives the fix as three steps: first copy the package management files, then install the dependencies, and finally copy the project source code, "which is subject to frequent change". The page's example is a Node project; for Python the package management file is <code>requirements.txt</code>, and the rule is identical.</p>
+    </div>
+  </section>
+
+  <section class="section" id="bench">
+    <div class="section-kicker">
+      <span class="klabel">Build-along · the bench</span>
+      <h2>Six rungs, computed in front of you</h2>
+      <span class="tag demo">★ 22 min · everyone builds</span>
+    </div>
+    <p class="lede">Each preset button is one rung of the ladder: the same Stackyard API, the same requirements, one improvement at a time. Pick a rung, pick the file that changed, and press Rebuild. The headline is the rebuild time; under it are the cache hits, the image size, the first-build time, the build context and the lint count, then the layer table with the reason for every row.</p>
+
+    <div class="dkr-bench" id="dkr-main" data-preset="naive" data-change="code"></div>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The ladder, as the lab prints it. Final image size in MB and rebuild seconds after an app code change, per rung. Naive: 1224.42 MB, 52.1 s, 9 lint findings. Plus .dockerignore: 624.41 MB, 40.1 s, 8. Dependency layer first: 624.42 MB, 0.5 s, 7. Pinned slim base: 248.67 MB, 0.5 s, 6. Multi-stage: 127.92 MB, 0.5 s, 4. Non-root and lint clean: 127.93 MB, 0.5 s, 0.">
+        <defs>
+          <filter id="s4bSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="29" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s4bHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+        </defs>
+        <style>
+          .s4bH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s4bL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s4bS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s4bV { font: 800 12px Inter, sans-serif; fill: #01005E; }
+          .s4bW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s4bA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s4bN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s4bA" x="260" y="30">FINAL IMAGE, MB (bar)</text>
+        <text class="s4bA" x="752" y="30" text-anchor="end">REBUILD</text>
+        <text class="s4bA" x="840" y="30" text-anchor="end">LINT</text>
+
+        <g filter="url(#s4bSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="260" y="46" width="420" height="30" rx="6" fill="url(#s4bHc)"/>
+          <rect x="260" y="100" width="214" height="30" rx="6" fill="url(#s4bHc)"/>
+          <rect x="260" y="154" width="214" height="30" rx="6" fill="url(#s4bHc)"/>
+          <rect x="260" y="208" width="85" height="30" rx="6" fill="#BAC6F7"/>
+          <rect x="260" y="262" width="44" height="30" rx="6" fill="#BAC6F7"/>
+          <rect x="260" y="316" width="44" height="30" rx="6" fill="#03008C"/>
+        </g>
+
+        <text class="s4bL" x="240" y="66" text-anchor="end">1 · Stackyard naive</text>
+        <text class="s4bL" x="240" y="120" text-anchor="end">2 · + .dockerignore</text>
+        <text class="s4bL" x="240" y="174" text-anchor="end">3 · dependency layer first</text>
+        <text class="s4bL" x="240" y="228" text-anchor="end">4 · pinned slim base</text>
+        <text class="s4bL" x="240" y="282" text-anchor="end">5 · multi-stage</text>
+        <text class="s4bL" x="240" y="336" text-anchor="end">6 · non-root + lint clean</text>
+
+        <text class="s4bV" x="560" y="66" text-anchor="middle">1224.42</text>
+        <text class="s4bV" x="486" y="120">624.41</text>
+        <text class="s4bV" x="486" y="174">624.42</text>
+        <text class="s4bV" x="357" y="228">248.67</text>
+        <text class="s4bV" x="316" y="282">127.92</text>
+        <text class="s4bV" x="316" y="336">127.93</text>
+
+        <text class="s4bV" x="752" y="66" text-anchor="end">52.1 s</text>
+        <text class="s4bV" x="752" y="120" text-anchor="end">40.1 s</text>
+        <text class="s4bV" x="752" y="174" text-anchor="end">0.5 s</text>
+        <text class="s4bV" x="752" y="228" text-anchor="end">0.5 s</text>
+        <text class="s4bV" x="752" y="282" text-anchor="end">0.5 s</text>
+        <text class="s4bV" x="752" y="336" text-anchor="end">0.5 s</text>
+
+        <text class="s4bV" x="840" y="66" text-anchor="end">9</text>
+        <text class="s4bV" x="840" y="120" text-anchor="end">8</text>
+        <text class="s4bV" x="840" y="174" text-anchor="end">7</text>
+        <text class="s4bV" x="840" y="228" text-anchor="end">6</text>
+        <text class="s4bV" x="840" y="282" text-anchor="end">4</text>
+        <text class="s4bV" x="840" y="336" text-anchor="end">0</text>
+
+        <text class="s4bN" x="40" y="380">Bars to scale (1224.42 MB = 420 px). Rebuild after an app code change, modelled seconds. Hatched = python:latest base.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - rung 3 buys the speed, rungs 4 and 5 buy the size, rung 6 buys the review</figcaption>
+    </figure>
+
+    <div class="steps">
+      <div class="step">
+        <p><strong>Rung 1, the naive Dockerfile.</strong> Press "1 · Stackyard naive" with "app code (app/scoring.py)" selected. Read the headline: 52.1 s to rebuild, 1 of 4 build steps from cache, a 1224.42 MB image, a 604.32 MB build context of 16 files, nine lint findings. Read the red line too: <code>.env</code> is inside the image. Scroll the layer table and find the row whose "Why" says it includes the changed file.</p>
+        <div class="prompt-box good"><span class="label">★ Step 1 · rung 1, as the lab prints it</span>52.1 s to rebuild after app code (app/scoring.py)
+1 of 4 build steps from cache · 1224.42 MB final image (419.02 MB base)
+68.6 s first build · 604.32 MB build context, 16 files · 9 lint findings
+.env is copied into the final image</div>
+      </div>
+      <div class="step">
+        <p><strong>Rung 2, add a .dockerignore.</strong> Press "2 · + .dockerignore". The Dockerfile is identical; only the ignore file changed. The context falls from 604.32 MB to 4.31 MB, because <code>.git</code>, <code>.venv</code>, <code>data/</code> and <code>notebooks/</code> no longer travel, and the image falls to 624.41 MB. The rebuild only falls to 40.1 s. Now pick "a data file" as the change and rebuild: 0 s, 4 of 4 from cache, because an ignored file cannot invalidate anything.</p>
+        <div class="prompt-box good"><span class="label">★ Step 2 · the ignore file the preset uses</span># keep the build context to what the image needs
+.git
+.venv
+.env
+data/
+notebooks/
+tests/
+**/__pycache__
+*.pyc
+Dockerfile
+.dockerignore</div>
+      </div>
+      <div class="step">
+        <p><strong>Rung 3, dependency layer first.</strong> Press "3 · dependency layer first" with the app code change. The rebuild falls to 0.5 s, 4 of 5 from cache, because <code>COPY requirements.txt .</code> and the pip install sit above the line that copies the code. Now change <code>requirements.txt</code> instead: 33.4 s, 2 of 5. That is the trade you are making on purpose: you pay the install when the dependencies change, and only then.</p>
+        <div class="prompt-box good"><span class="label">★ Step 3 · the reorder, and nothing else</span>FROM python:latest
+WORKDIR /app
+RUN apt-get update &amp;&amp; apt-get install -y curl
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+ENV DB_PASSWORD=stackyard-dev-123
+EXPOSE 8000
+CMD uvicorn app.main:app --host 0.0.0.0 --port 8000</div>
+      </div>
+      <div class="step">
+        <p><strong>Rung 4, a pinned slim base.</strong> Press "4 · pinned slim base". One word changed on the first line, <code>python:latest</code> to <code>python:3.12-slim</code>, and the image falls from 624.42 MB to 248.67 MB: the base itself is 43.27 MB against 419.02 MB at the time of writing. It also stops floating to whatever Python <code>latest</code> means this week. The lint drops DL3007 and has six findings left.</p>
+      </div>
+      <div class="step">
+        <p><strong>Rung 5, multi-stage.</strong> Press "5 · multi-stage". The packages install in a <code>builder</code> stage and only the installed result is copied into the final stage, so the pip cache and the apt layer never reach the image: 127.92 MB. Try "README.md" as the change: 0 s, because the final stage now copies only <code>app/</code>.</p>
+        <div class="prompt-box good"><span class="label">★ Step 5 · two stages, one image</span>FROM python:3.12-slim AS builder
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --prefix=/install -r requirements.txt
+
+FROM python:3.12-slim
+WORKDIR /app
+COPY --from=builder /install /usr/local
+COPY app/ ./app/
+ENV DB_PASSWORD=stackyard-dev-123
+EXPOSE 8000
+CMD uvicorn app.main:app --host 0.0.0.0 --port 8000</div>
+      </div>
+      <div class="step">
+        <p><strong>Rung 6, non-root and lint clean.</strong> Press "6 · non-root + lint clean". <code>--no-cache-dir</code> on pip, a <code>useradd</code> and <code>USER stackyard</code>, the password removed from the image entirely (Compose supplies it at run time in session 5), and the CMD in exec form. Zero lint findings, 127.93 MB, 0.5 s. This is piece four of Stackyard's container kit: save it as the API's Dockerfile.</p>
+        <div class="prompt-box good"><span class="label">★ Step 6 · Stackyard's API Dockerfile, rung 6</span>FROM python:3.12-slim AS builder
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.12-slim
+WORKDIR /app
+RUN useradd --create-home --uid 10001 stackyard
+COPY --from=builder /install /usr/local
+COPY app/ ./app/
+USER stackyard
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]</div>
+      </div>
+      <div class="step">
+        <p><strong>Now paste your own.</strong> Paste your session 3 Dockerfile into the edit box and press Rebuild. The lab only knows Stackyard's files and packages, so read its numbers as "Stackyard built with your Dockerfile"; the cache walk and the lint are about your file exactly.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <p><strong>Read the "Why" column, not only the headline.</strong> Every row says why it was cached or rebuilt: "includes the changed file", "pip cache kept in the layer", "apt lists left in the layer", "stage not needed by the final stage". Those phrases are the review comments you will be writing on other people's Dockerfiles.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-2">
+    <div class="section-kicker">
+      <span class="klabel">Part 2 · covers which change costs what</span>
+      <h2>Which file changed decides which rung pays off</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">A rebuild time is meaningless without the change that caused it. The same Dockerfile is instant for one edit and slow for another, and each rung of the ladder helps a different kind of edit. The grid is every rung against the four file changes, read straight off the lab.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rebuild seconds, modelled, for six rungs against four file changes. Naive: code 52.1, requirements 52.1, data file 53.2, README 52.1. Plus .dockerignore: 40.1, 40.1, 0, 40.1. Dependency layer first: 0.5, 33.4, 0, 0.5. Pinned slim base: 0.5, 33.4, 0, 0.5. Multi-stage: 0.5, 35.3, 0, 0. Non-root and lint clean: 0.5, 35.3, 0, 0.">
+        <defs>
+          <filter id="s4cSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="31" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+        </defs>
+        <style>
+          .s4cH { font: 800 11px Inter, sans-serif; fill: #0E1030; }
+          .s4cL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s4cW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s4cK { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s4cS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s4cN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s4cH" x="318" y="44" text-anchor="middle">APP CODE</text>
+        <text class="s4cH" x="448" y="44" text-anchor="middle">REQUIREMENTS</text>
+        <text class="s4cH" x="578" y="44" text-anchor="middle">DATA FILE</text>
+        <text class="s4cH" x="708" y="44" text-anchor="middle">README</text>
+
+        <g filter="url(#s4cSk)" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="258" y="56" width="120" height="36" rx="6" fill="#01005E"/>
+          <rect x="388" y="56" width="120" height="36" rx="6" fill="#01005E"/>
+          <rect x="518" y="56" width="120" height="36" rx="6" fill="#01005E"/>
+          <rect x="648" y="56" width="120" height="36" rx="6" fill="#01005E"/>
+
+          <rect x="258" y="100" width="120" height="36" rx="6" fill="#01005E"/>
+          <rect x="388" y="100" width="120" height="36" rx="6" fill="#01005E"/>
+          <rect x="518" y="100" width="120" height="36" rx="6" fill="#FFFFFF"/>
+          <rect x="648" y="100" width="120" height="36" rx="6" fill="#01005E"/>
+
+          <rect x="258" y="144" width="120" height="36" rx="6" fill="#BAC6F7"/>
+          <rect x="388" y="144" width="120" height="36" rx="6" fill="#1D63ED"/>
+          <rect x="518" y="144" width="120" height="36" rx="6" fill="#FFFFFF"/>
+          <rect x="648" y="144" width="120" height="36" rx="6" fill="#BAC6F7"/>
+
+          <rect x="258" y="188" width="120" height="36" rx="6" fill="#BAC6F7"/>
+          <rect x="388" y="188" width="120" height="36" rx="6" fill="#1D63ED"/>
+          <rect x="518" y="188" width="120" height="36" rx="6" fill="#FFFFFF"/>
+          <rect x="648" y="188" width="120" height="36" rx="6" fill="#BAC6F7"/>
+
+          <rect x="258" y="232" width="120" height="36" rx="6" fill="#BAC6F7"/>
+          <rect x="388" y="232" width="120" height="36" rx="6" fill="#1D63ED"/>
+          <rect x="518" y="232" width="120" height="36" rx="6" fill="#FFFFFF"/>
+          <rect x="648" y="232" width="120" height="36" rx="6" fill="#FFFFFF"/>
+
+          <rect x="258" y="276" width="120" height="36" rx="6" fill="#BAC6F7"/>
+          <rect x="388" y="276" width="120" height="36" rx="6" fill="#1D63ED"/>
+          <rect x="518" y="276" width="120" height="36" rx="6" fill="#FFFFFF"/>
+          <rect x="648" y="276" width="120" height="36" rx="6" fill="#FFFFFF"/>
+        </g>
+
+        <text class="s4cL" x="244" y="78" text-anchor="end">1 · naive</text>
+        <text class="s4cL" x="244" y="122" text-anchor="end">2 · + .dockerignore</text>
+        <text class="s4cL" x="244" y="166" text-anchor="end">3 · dependency first</text>
+        <text class="s4cL" x="244" y="210" text-anchor="end">4 · pinned slim</text>
+        <text class="s4cL" x="244" y="254" text-anchor="end">5 · multi-stage</text>
+        <text class="s4cL" x="244" y="298" text-anchor="end">6 · non-root, clean</text>
+
+        <text class="s4cW" x="318" y="78" text-anchor="middle">52.1 s</text>
+        <text class="s4cW" x="448" y="78" text-anchor="middle">52.1 s</text>
+        <text class="s4cW" x="578" y="78" text-anchor="middle">53.2 s</text>
+        <text class="s4cW" x="708" y="78" text-anchor="middle">52.1 s</text>
+
+        <text class="s4cW" x="318" y="122" text-anchor="middle">40.1 s</text>
+        <text class="s4cW" x="448" y="122" text-anchor="middle">40.1 s</text>
+        <text class="s4cK" x="578" y="122" text-anchor="middle">0 s</text>
+        <text class="s4cW" x="708" y="122" text-anchor="middle">40.1 s</text>
+
+        <text class="s4cK" x="318" y="166" text-anchor="middle">0.5 s</text>
+        <text class="s4cW" x="448" y="166" text-anchor="middle">33.4 s</text>
+        <text class="s4cK" x="578" y="166" text-anchor="middle">0 s</text>
+        <text class="s4cK" x="708" y="166" text-anchor="middle">0.5 s</text>
+
+        <text class="s4cK" x="318" y="210" text-anchor="middle">0.5 s</text>
+        <text class="s4cW" x="448" y="210" text-anchor="middle">33.4 s</text>
+        <text class="s4cK" x="578" y="210" text-anchor="middle">0 s</text>
+        <text class="s4cK" x="708" y="210" text-anchor="middle">0.5 s</text>
+
+        <text class="s4cK" x="318" y="254" text-anchor="middle">0.5 s</text>
+        <text class="s4cW" x="448" y="254" text-anchor="middle">35.3 s</text>
+        <text class="s4cK" x="578" y="254" text-anchor="middle">0 s</text>
+        <text class="s4cK" x="708" y="254" text-anchor="middle">0 s</text>
+
+        <text class="s4cK" x="318" y="298" text-anchor="middle">0.5 s</text>
+        <text class="s4cW" x="448" y="298" text-anchor="middle">35.3 s</text>
+        <text class="s4cK" x="578" y="298" text-anchor="middle">0 s</text>
+        <text class="s4cK" x="708" y="298" text-anchor="middle">0 s</text>
+
+        <text class="s4cN" x="40" y="344">Darkest = 40 s or more; mid blue = a dependency reinstall; pale = under 1 s; white = fully cached.</text>
+        <text class="s4cN" x="40" y="364">Modelled seconds from the lab. Constructed Stackyard example.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - after rung 3 the only slow column is the one where the dependencies really did change</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Read the grid by column, not by row<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>App code.</strong> The edit you make fifty times a day. Rung 3 takes it from 40.1 s to 0.5 s and nothing after rung 3 moves it again. This is the column people feel.</p>
+        <p><strong>Requirements.</strong> Slow on every rung, and it should be: the packages really changed, so they really have to install. Rungs 5 and 6 are slightly slower (35.3 s against 33.4 s) because the builder's result is copied into a second stage; the lab's honest price for a smaller image.</p>
+        <p><strong>Data file.</strong> Costs 53.2 s on the naive rung, where the 118 MB parquet file is sent and copied, and 0 s on every rung after it, where <code>.dockerignore</code> keeps it out of the context. Data does not belong in an image; in session 5 it arrives as a volume.</p>
+        <p><strong>README.</strong> Still costs 0.5 s on rungs 3 and 4, because <code>COPY . .</code> copies it. On rungs 5 and 6, which copy only <code>app/</code>, it costs nothing. Copying only what the image needs is a cache decision as much as a size decision.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>A cache mount, when requirements change often<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>If the requirements column is the one that hurts, Docker documents a cache mount for exactly this: <code>RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt</code>. The pip cache survives between builds without ever becoming part of a layer, so a changed requirements file reinstalls from local wheels instead of downloading them again. Edit rung 6 in the lab to use it and change the requirements: the modelled download time drops out of the rebuild, and DL3042 stays quiet because the cache never reaches the image.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>Why .dockerignore is a speed tool too.</strong> Docker's build context documentation describes the ignore file as a way to avoid "sending unwanted files and directories to the builder", and notes the matching follows Go's <code>filepath.Match</code> rules, so <code>*.md</code> excludes markdown files at the root while "markdown files under subdirectories are still included". The lab's unit tests encode that rule: <code>*.pyc</code> alone leaves <code>app/__pycache__</code> in the context, and the preset needs <code>**/__pycache__</code> to drop it.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-3">
+    <div class="section-kicker">
+      <span class="klabel">Part 3 · covers the anti-levers</span>
+      <h2>Break it on purpose: COPY . . first, and :latest</h2>
+      <span class="tag concept">6 min live</span>
+    </div>
+    <p class="lede">Two mistakes undo the ladder, and both look harmless in review. The lab has a button for each. Load rung 6, press "Break it: COPY . . first", then reload rung 6 and press "Break it: float to :latest". The lab must be able to report a worse number, or it is not measuring anything.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two anti-levers applied to rung 6. COPY . . inserted before the dependency install: the rebuild after an app code change rises from 0.5 seconds with 6 of 7 steps cached to 35.6 seconds with 3 of 8 cached. Floating every python base to latest: the final image grows from 127.93 MB to 503.68 MB, and when the tag is re-pointed upstream the rebuild costs 46.2 seconds with 0 of 7 steps cached.">
+        <defs>
+          <filter id="s4dSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="43" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <marker id="s4dAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s4dH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s4dS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s4dV { font: 800 20px Inter, sans-serif; fill: #01005E; }
+          .s4dR { font: 800 20px Inter, sans-serif; fill: #991B1B; }
+          .s4dC { font: 600 11px ui-monospace, Menlo, monospace; fill: #0E1030; }
+          .s4dN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <g filter="url(#s4dSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="40" y="40" width="390" height="206" rx="12" transform="rotate(-0.4 235 143)" fill="#FFFFFF"/>
+          <rect x="450" y="40" width="390" height="206" rx="12" transform="rotate(0.4 645 143)" fill="#FFFFFF"/>
+          <rect x="60" y="112" width="140" height="70" rx="10" fill="#EEF1FD"/>
+          <rect x="270" y="112" width="140" height="70" rx="10" fill="#FEF2F2" stroke="#991B1B"/>
+          <rect x="470" y="112" width="140" height="70" rx="10" fill="#EEF1FD"/>
+          <rect x="680" y="112" width="140" height="70" rx="10" fill="#FEF2F2" stroke="#991B1B"/>
+          <path d="M204 147 L264 147" marker-end="url(#s4dAr)"/>
+          <path d="M614 147 L674 147" marker-end="url(#s4dAr)"/>
+        </g>
+
+        <text class="s4dH" x="60" y="66">COPY . . first</text>
+        <text class="s4dC" x="60" y="88">+ COPY . . above the pip install</text>
+        <text class="s4dV" x="130" y="146" text-anchor="middle">0.5 s</text>
+        <text class="s4dS" x="130" y="166" text-anchor="middle">6 of 7 cached</text>
+        <text class="s4dR" x="340" y="146" text-anchor="middle">35.6 s</text>
+        <text class="s4dS" x="340" y="166" text-anchor="middle">3 of 8 cached</text>
+        <text class="s4dS" x="60" y="210">every code change reinstalls every package</text>
+        <text class="s4dS" x="60" y="228">image unchanged: 127.93 MB</text>
+
+        <text class="s4dH" x="470" y="66">Float to :latest</text>
+        <text class="s4dC" x="470" y="88">python:3.12-slim becomes python:latest</text>
+        <text class="s4dV" x="540" y="146" text-anchor="middle">127.93</text>
+        <text class="s4dS" x="540" y="166" text-anchor="middle">MB image</text>
+        <text class="s4dR" x="750" y="146" text-anchor="middle">503.68</text>
+        <text class="s4dS" x="750" y="166" text-anchor="middle">MB image</text>
+        <text class="s4dS" x="470" y="210">a re-pointed tag: 46.2 s, 0 of 7 cached</text>
+        <text class="s4dS" x="470" y="228">and Python 3.15 today, not 3.12</text>
+
+        <text class="s4dN" x="40" y="290">Both applied to rung 6 in the lab. Seconds are modelled; sizes use the real Docker Hub bases.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - one moved line takes every edit from 0.5 s to 35.6 s; one moved word takes the image from 127.93 MB to 503.68 MB and changes your Python</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Why each one gets through review<span class="mini">4 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>COPY . . first.</strong> It usually arrives as a fix: the pip install needs a local package, a <code>setup.py</code> or a constraints file, and the quickest way to make it visible is to copy everything earlier. The build still succeeds and the image is the same size (on rung 6 the extra copy lands in the builder stage, which never reaches the image). Only the rebuild changes, from 0.5 s to 35.6 s, and nobody times rebuilds in review. The lint catches it: DKR-ORDER, a lab rule, fires on the line. The real fix is to copy the one extra file the install needs, next to <code>requirements.txt</code>.</p>
+        <p><strong>Float to :latest.</strong> It arrives as tidiness: "always get the newest Python". The image grows from 127.93 MB to 503.68 MB because <code>latest</code> is the full Debian-based image, not slim; the Python inside becomes 3.15 at the time of writing; and the build now depends on when you happen to pull. Press "base tag moved upstream" on the change list: 46.2 s, 0 of 7 cached, because every layer sits on a base that changed underneath it. DL3007 fires.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Pinning harder than a tag: digests<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><code>python:3.12-slim</code> is a far better pin than <code>latest</code>, but it is still a tag, and tags are mutable: it moves on every Python patch release and Debian update, which is usually what you want for security fixes. To freeze the base completely, Docker's best-practice guide says to pin to a digest, as in <code>FROM python:3.12-slim@sha256:...</code>. The lab treats a digest-pinned FROM as immune to a moved tag: add a digest to rung 6 and choose "base tag moved upstream" to see the rebuild fall to 0 s. The cost is that security updates now arrive only when you change the digest yourself; session 6 puts that decision on the release checklist.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>The lint rules are real rules.</strong> hadolint, the widely used Dockerfile linter, documents DL3007 as "Using latest is prone to errors if the image will ever update. Pin the version explicitly to a release tag." and DL3042 as "Avoid cache directory with pip install --no-cache-dir". The lab implements ten hadolint rules by id, modelled on their documented intent rather than hadolint's own code, plus three rules of its own (DKR-ORDER, DKR-USER, DKR-CONTEXT) that say so wherever they appear.</p>
+    </div>
+  </section>
+
+  <section class="section" id="exercise">
+    <div class="section-kicker">
+      <span class="klabel">Homework</span>
+      <h2>Before session 5</h2>
+      <span class="tag exercise">30 min</span>
+    </div>
+    <ol>
+      <li><strong>Find your rung.</strong> Paste a Dockerfile you own (or the session 3 one) into the lab. Which rung of the ladder is it closest to, and which single change would move it up one rung?</li>
+      <li><strong>Make the lab report a worse number.</strong> Starting from rung 6, find one edit, other than the two break buttons, that raises the rebuild time after an app code change. Write down the edit and the number the lab prints.</li>
+      <li><strong>Try a cache mount.</strong> Add <code>--mount=type=cache,target=/root/.cache/pip</code> to the pip line of rung 6 and change <code>requirements.txt</code>. Compare the rebuild with rung 6's 35.3 s and explain the difference from the "Why" column.</li>
+      <li><strong>Read a real build log.</strong> If you have Docker, build any Dockerfile twice, change one source file, and build again. Find the word CACHED in the output and check it against the four rules from Part 1.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="quiz">
+    <div class="section-kicker">
+      <span class="klabel">Check yourself</span>
+      <h2>Three questions</h2>
+    </div>
+    <p>Clear all three and session 4 gets stamped in your passport.</p>
+
+    <div class="quiz-q" data-answer="2">
+      <p class="qtext">1 · In the naive Dockerfile, a one-line change to <code>app/scoring.py</code> makes the pip install run again. Which cache rule causes that?</p>
+      <button class="qopt" type="button">A · RUN instructions are always re-run on every build</button>
+      <button class="qopt" type="button">B · pip detects that the code changed</button>
+      <button class="qopt" type="button">C · <code>COPY . .</code> copies the changed file, so its checksum differs and it is invalidated, and every instruction after it rebuilds, including the pip install below it</button>
+      <button class="qopt" type="button">D · The base image was updated</button>
+      <p class="qwhy">RUN is never invalidated by itself between builds; it reruns only when something above it was. Move the line that copies the changing file below the install and the install comes from the cache.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="0">
+      <p class="qtext">2 · On rung 2, changing the 118 MB data file costs 0 s, while on rung 1 it costs 53.2 s. Why?</p>
+      <button class="qopt" type="button">A · The <code>.dockerignore</code> keeps <code>data/</code> out of the build context, so no COPY can pick the file up and nothing it touches can be invalidated</button>
+      <button class="qopt" type="button">B · Docker never caches large files</button>
+      <button class="qopt" type="button">C · Parquet files are compressed, so they do not count</button>
+      <button class="qopt" type="button">D · Rung 2 uses a smaller base image</button>
+      <p class="qwhy">An ignored file never reaches the builder. Rung 2 changes only the ignore file; the base is still python:latest. Rung 4 is the one that changes the base.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="3">
+      <p class="qtext">3 · A reviewer changes rung 6's base from <code>python:3.12-slim</code> to <code>python:latest</code> "to stay current". What does the lab show, and what is the better way to stay current?</p>
+      <button class="qopt" type="button">A · Nothing changes; latest and 3.12-slim are the same image</button>
+      <button class="qopt" type="button">B · The image shrinks, because latest is newer</button>
+      <button class="qopt" type="button">C · Only the lint changes</button>
+      <button class="qopt" type="button">D · The image grows from 127.93 MB to 503.68 MB and the Python inside becomes 3.15; staying current is better done by keeping a pinned tag or digest and updating it deliberately, as a reviewed change</button>
+      <p class="qwhy">latest is the full image, not slim, and it moves whenever the publisher re-points it. A pinned tag still receives patch updates; a digest receives none until you change it. Either way the change is visible in review.</p>
+    </div>
+
+    <p class="quiz-score"></p>
+  </section>
+
+  <section class="section" id="official">
+    <div class="section-kicker">
+      <span class="klabel">Sources covered</span>
+      <h2>What this session teaches, and where it came from</h2>
+    </div>
+    <div class="covered">
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Cache invalidation rules</span><span class="note">Docker Docs, "Build cache invalidation" and "Docker build cache", read at source 2026-11-16; the lab's engine implements them</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Layer ordering and cache mounts</span><span class="note">Docker Docs, "Optimize cache usage in builds", read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Multi-stage builds, stage skipping</span><span class="note">Docker Docs, "Multi-stage builds", read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">.dockerignore matching</span><span class="note">Docker Docs, "Build context", read at source; Go filepath.Match rules, encoded in the lab's unit tests</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Lint rules DL3000-DL3064</span><span class="note">hadolint README rule table, read at source; ten rules implemented by id, three lab rules labelled</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Base image and package sizes</span><span class="note">Docker Hub tag API and PyPI, read 2026-11-16; at the time of writing</span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">Build times</span><span class="note">Modelled parameters, printed on the lab; the ordering of rungs is the claim, not the decimals</span></div>
+    </div>
+    <p class="mono" style="margin-top:14px">Every fact on this page, and its verification tier, is recorded in the course's source map.</p>
+  </section>
+
+  <section class="cheat" id="cheatsheet">
+    <h3>Session 4 cheat sheet <span>· pin this</span></h3>
+    <div class="grid-2">
+      <div class="cheat-item"><b>Invalidation flows downhill</b><span>Once one instruction misses the cache, everything after it in the stage rebuilds.</span></div>
+      <div class="cheat-item"><b>COPY watches files, RUN does not</b><span>A COPY misses when a file it copies changed; a RUN misses only when something above it did.</span></div>
+      <div class="cheat-item"><b>Dependencies first</b><span>COPY requirements.txt, RUN pip install, then COPY the code. 52.1 s became 0.5 s.</span></div>
+      <div class="cheat-item"><b>.dockerignore</b><span>Ignored files never reach the builder and never invalidate anything. Use **/ for subfolders.</span></div>
+      <div class="cheat-item"><b>Slim and multi-stage</b><span>Pinned slim base, install in a builder, copy only the result: 624.42 MB became 127.92 MB.</span></div>
+      <div class="cheat-item"><b>Two anti-levers</b><span>COPY . . above the install (35.6 s per edit); a :latest base (503.68 MB, a moving Python).</span></div>
+    </div>
+  </section>
+
+  <div class="callout next">
+    <span class="nx-pill">Next session</span>
+    <p>The API image is fast to rebuild and small. It still needs a database, a notebook beside it and a password from somewhere other than the image. Session 5 writes Stackyard's <code>compose.yaml</code>: three services, the default network that lets the API reach Postgres as <code>db</code>, a volume for the data, a healthcheck the API waits for, and an env file for the secret.</p>
+  </div>
+
+  <footer class="pagefoot">
+    <span>Session 4 of 6 · learn-docker-containers-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span><a href="03-a-dockerfile-for-python.html">← Prev: Writing a Dockerfile for a Python data project</a> &nbsp;·&nbsp; <a href="05-compose-one-command.html">Next: Compose: notebook, API, database, one command →</a></span>
+  </footer>
+
+</main>
+
+<script src="../assets/dkr-sample.js?v=1"></script>
+<script src="../assets/dkr-live.js?v=1"></script>
+<script src="../assets/app.js?v=1"></script>
+</body>
+</html>

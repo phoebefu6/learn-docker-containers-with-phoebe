@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Session 3 of 6. What FROM, WORKDIR, COPY, RUN, ENV and EXPOSE each do at build time and at run time, CMD against ENTRYPOINT, a .dockerignore that keeps the secret file out, pinned versions and a non-root user, written line by line for the constructed Stackyard scoring API.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="Writing a Dockerfile for a Python data project - learn docker containers with phoebe">
+<meta property="og:description" content="Session 3 of 6. Build time against run time, CMD against ENTRYPOINT, a .dockerignore, pinning and a non-root user, in one commented Dockerfile.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/courses/03-a-dockerfile-for-python.html">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Writing a Dockerfile for a Python data project - learn docker containers with phoebe">
+<meta name="twitter:description" content="Session 3 of 6. Six instructions, CMD against ENTRYPOINT, .dockerignore, pinning and a non-root user.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Session 3 · A Dockerfile for Python - learn docker containers with phoebe</title>
+<link rel="stylesheet" href="../assets/style.css?v=1">
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="wrap">
+    <span class="crumb"><a href="../index.html">learn-docker-containers-with-phoebe</a> / Session 3 of 6</span>
+    <button class="btn" id="toggle-all" type="button">Expand all</button>
+    <button class="btn primary" id="zoom-toggle" type="button">Projector zoom: off</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Learn Docker &amp; Containers with Phoebe · Session 3 of 6</div>
+    <h1>Writing a <span class="accent">Dockerfile</span> for a Python data project</h1>
+    <p class="sub">The inventory from session 1 said what has to be written down. Tonight we write it: a Dockerfile of nine instructions, a .dockerignore that keeps the laptop's clutter and its secrets on the laptop, and a requirements file where every version is a number rather than a hope. Each line gets a comment saying which hidden dependency it now carries, so the next person reads a description of the environment, not a spell.</p>
+    <div class="chip-row">
+      <span class="chip level">🟡 Core</span>
+      <span class="chip audience">Data, analytics and ML people who ship notebooks, APIs and jobs</span>
+      <span class="chip audience">Bring your session 1 inventory</span>
+      <span class="chip time">45 min</span>
+    </div>
+    <div class="agenda">
+      <span class="a1" style="flex:1">0-3 · Welcome</span>
+      <span class="a2" style="flex:4">3-18 · Instructions, CMD and ENTRYPOINT, .dockerignore</span>
+      <span class="a3" style="flex:5">18-40 · Build-along: containerise the Stackyard API</span>
+      <span class="a4" style="flex:1">40-45 · Q&amp;A</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="intro">
+    <div class="section-kicker">
+      <span class="klabel">Part 0</span>
+      <h2>Where we start</h2>
+    </div>
+    <p class="lede">Session 2 taught you to read a Dockerfile as a stack of layers. Tonight you write one, for the Constructed Stackyard example's scoring API: the FastAPI service that today only runs on Ana's laptop. Three questions drive every line. Does this instruction change files, or only settings? What will <code>docker run</code> actually start? And what does the builder get to see in the first place? Answer those three and the Dockerfile almost writes itself; skip them and it works today and surprises you next month.</p>
+
+    <div class="legend">
+      <span class="pill">🎫 Clear all three quiz questions to stamp your passport</span>
+      <span class="pill">Live = presented in the 45 minutes</span>
+      <span class="pill">Self-study = the full depth, after class</span>
+      <span class="pill">★ Build-along = do it yourself, in the page</span>
+    </div>
+
+    <div class="callout win">
+      <p><strong>★ What you walk out with tonight.</strong> Three files for Stackyard's API: a pinned <code>requirements.txt</code>, a <code>.dockerignore</code> that keeps <code>.env</code> out of the build context, and a commented single-stage Dockerfile that runs as a non-root user. Together they are piece three of Stackyard's container kit, and session 4 puts them on the bench to time the rebuild.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-1">
+    <div class="section-kicker">
+      <span class="klabel">Part 1 · covers FROM, WORKDIR, COPY, RUN, ENV, EXPOSE</span>
+      <h2>Six instructions, and the moment each one acts</h2>
+      <span class="tag concept">6 min live</span>
+    </div>
+    <p class="lede">Every instruction in a Dockerfile does its work at one of two moments. Some change files while the image is being built, and those files become a layer that travels with the image. Others only write a setting into the image's configuration, which does nothing until somebody starts a container from it. Mixing the two up is the source of most Dockerfile surprises. The figure sorts the instructions Stackyard's API needs (Constructed Stackyard example) into those two lanes.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 388" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dockerfile instructions sorted into two lanes. Build time, changes files: RUN runs a command and writes a new layer of the files it created; COPY copies files from the build context and writes a layer of those files. Run time, changes config: ENV sets a variable anyone can inspect; EXPOSE notes port 8000 and publishes nothing; CMD sets the default command; USER sets who the app runs as. In the middle, FROM picks the base the layers sit on, and WORKDIR acts at both moments: the folder later build steps use, and the folder the container starts in.">
+        <defs>
+          <filter id="s3aSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="53" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s3aHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s3aAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s3aH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s3aL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s3aS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s3aC { font: 600 11px ui-monospace, Menlo, Consolas, monospace; fill: #0E1030; }
+          .s3aA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s3aW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s3aX { font: 400 11px Inter, sans-serif; fill: #FFFFFF; }
+          .s3aN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s3aH" x="30" y="24">TWO MOMENTS: WHEN THE IMAGE IS BUILT, AND WHEN A CONTAINER STARTS</text>
+        <text class="s3aA" x="44" y="52">BUILD TIME: CHANGES FILES</text>
+        <text class="s3aA" x="440" y="52" text-anchor="middle">BASE AND BOTH</text>
+        <text class="s3aA" x="564" y="52">RUN TIME: CHANGES CONFIG</text>
+
+        <g filter="url(#s3aSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="64" width="300" height="270" rx="12" transform="rotate(-0.4 180 199)" fill="#EEF1FD"/>
+          <rect x="550" y="64" width="300" height="270" rx="12" transform="rotate(0.4 700 199)" fill="#EEF1FD"/>
+          <rect x="44" y="80" width="272" height="112" rx="10" transform="rotate(-0.8 180 136)" fill="#FFFFFF"/>
+          <rect x="44" y="208" width="272" height="112" rx="10" transform="rotate(0.7 180 264)" fill="#FFFFFF"/>
+          <rect x="54" y="92" width="10" height="88" rx="3" fill="url(#s3aHc)"/>
+          <rect x="54" y="220" width="10" height="88" rx="3" fill="url(#s3aHc)"/>
+          <rect x="362" y="80" width="156" height="60" rx="10" transform="rotate(-0.6 440 110)" fill="#01005E"/>
+          <rect x="362" y="158" width="156" height="120" rx="10" transform="rotate(0.6 440 218)" fill="#FFFFFF"/>
+          <path d="M360 218 L336 218" marker-end="url(#s3aAr)"/>
+          <path d="M520 218 L544 218" marker-end="url(#s3aAr)"/>
+          <rect x="564" y="80" width="272" height="56" rx="10" transform="rotate(0.8 700 108)" fill="#FFFFFF"/>
+          <rect x="564" y="144" width="272" height="56" rx="10" transform="rotate(-0.7 700 172)" fill="#FFFFFF"/>
+          <rect x="564" y="208" width="272" height="56" rx="10" transform="rotate(0.6 700 236)" fill="#FFFFFF"/>
+          <rect x="564" y="272" width="272" height="56" rx="10" transform="rotate(-0.5 700 300)" fill="#FFFFFF"/>
+        </g>
+
+        <text class="s3aH" x="76" y="104">RUN</text>
+        <text class="s3aS" x="76" y="124">runs a command in the image so far</text>
+        <text class="s3aL" x="76" y="144">writes: a new layer of files</text>
+        <text class="s3aC" x="76" y="172">RUN pip install --no-cache-dir</text>
+
+        <text class="s3aH" x="76" y="232">COPY</text>
+        <text class="s3aS" x="76" y="252">takes files from the build context</text>
+        <text class="s3aL" x="76" y="272">writes: a layer of those files</text>
+        <text class="s3aC" x="76" y="300">COPY app/ ./app/</text>
+
+        <text class="s3aW" x="440" y="100" text-anchor="middle">FROM</text>
+        <text class="s3aX" x="440" y="116" text-anchor="middle">python:3.12-slim</text>
+        <text class="s3aX" x="440" y="131" text-anchor="middle">the layers under yours</text>
+
+        <text class="s3aC" x="440" y="180" text-anchor="middle">WORKDIR /app</text>
+        <text class="s3aA" x="440" y="202" text-anchor="middle">build:</text>
+        <text class="s3aS" x="440" y="218" text-anchor="middle">the folder later RUN,</text>
+        <text class="s3aS" x="440" y="232" text-anchor="middle">COPY lines work in</text>
+        <text class="s3aA" x="440" y="252" text-anchor="middle">run:</text>
+        <text class="s3aS" x="440" y="266" text-anchor="middle">where the app starts</text>
+
+        <text class="s3aH" x="578" y="104">ENV</text>
+        <text class="s3aS" x="578" y="124">sets a variable; anyone can inspect it</text>
+        <text class="s3aH" x="578" y="168">EXPOSE 8000</text>
+        <text class="s3aS" x="578" y="188">notes the port; publishes nothing</text>
+        <text class="s3aH" x="578" y="232">CMD</text>
+        <text class="s3aS" x="578" y="252">the default command at docker run</text>
+        <text class="s3aH" x="578" y="296">USER</text>
+        <text class="s3aS" x="578" y="316">the account the app runs as</text>
+
+        <text class="s3aN" x="30" y="362">Files ride in layers; settings ride in the image's config (0 MB in the session 4 lab's layer list).</text>
+        <text class="s3aN" x="30" y="380">Example lines from the Constructed Stackyard example.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - two instructions make the image bigger; the rest only change what happens when it starts</figcaption>
+    </figure>
+
+    <details class="card" open>
+      <summary><span class="mode live">Live</span>Six instructions and the job of each<span class="mini">4 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>FROM</strong> picks the image you build on top of: every layer of the base sits under yours. For Stackyard it is <code>python:3.12-slim</code>, because session 1's inventory found Python 3.12 on the laptop. Part 3 explains why the tag is spelled out in full.</p>
+        <p><strong>WORKDIR</strong> sets the folder that every later RUN, COPY and CMD works in, and it is the folder the container starts in. Docker's best-practice guide says to always use absolute paths, and hadolint, the widely used Dockerfile linter, has a rule for it: DL3000, "Use absolute WORKDIR." <code>WORKDIR /app</code>, never <code>WORKDIR app</code>, so nobody has to guess where "here" is.</p>
+        <p><strong>COPY</strong> copies files from the build context (the folder you send to the builder) into the image, as a new layer. Its cousin <strong>ADD</strong> can also fetch remote HTTPS and Git URLs and unpack local archives. For ordinary local files use COPY: hadolint's DL3020 reads "Use COPY instead of ADD for files and folders." Reach for ADD only when you actually want the fetch or the unpack.</p>
+        <p><strong>RUN</strong> executes a command inside the image as it stands so far, and whatever the command writes to disk becomes the next layer. <code>pip install</code> lives here, and so does creating a user.</p>
+        <p><strong>ENV</strong> sets an environment variable that is baked into the image's configuration and present in every container started from it. Anyone who can pull the image can read it, which is why hadolint's DL3064 says "Potentially sensitive data should not be used in the ARG or ENV commands". A password in ENV is a password in the image. Session 6 shows how secrets reach a build safely; session 5 shows how they reach a running container.</p>
+        <p><strong>EXPOSE</strong> is the one people misread most. In Docker's own words it "doesn't actually publish the port". It documents which port the app listens on. Publishing it to your laptop is a run-time decision: <code>docker run -p 8000:8000</code>.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>ARG vs ENV<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><code>ARG</code> declares a build-time input: a value you pass with <code>docker build --build-arg NAME=value</code> so one Dockerfile can build, say, two Python versions. <code>ENV</code> sets a variable in the image's configuration, so it is still there when a container runs. The everyday rule of thumb: ARG to steer the build, ENV for settings the running app needs and that are safe to publish, such as a log level.</p>
+        <p>What neither of them is for: secrets. Docker's "Build secrets" page is blunt that build arguments and environment variables "are inappropriate for passing secrets to your build" because "they persist in the final image". The right tool is a secret mount that exists only for one RUN line, which session 6 teaches. Until then, the safe habit is the one hadolint's DL3064 encodes: no name containing PASSWORD, SECRET, TOKEN or KEY anywhere near an ARG or ENV line.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>The port that was never published.</strong> The Dockerfile reference says EXPOSE "doesn't actually publish the port"; it is documentation between the person who wrote the image and the person who runs it. Publishing happens with <code>-p</code> or <code>-P</code> on <code>docker run</code>, or with <code>ports:</code> in Compose, which is session 5. So when a teammate writes "I added EXPOSE 8000 and still cannot reach the API", the Dockerfile is fine. The missing piece is on the command line.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-2">
+    <div class="section-kicker">
+      <span class="klabel">Part 2 · covers CMD vs ENTRYPOINT, exec vs shell form</span>
+      <h2>What actually starts when you type docker run</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">An image carries a default command, and the person running it can override some or all of that default from the command line. Two instructions decide which part is overridable: CMD and ENTRYPOINT. Stackyard (Constructed Stackyard example) needs both behaviours. The API is a service that should start uvicorn by default, while still letting you poke inside. The nightly job is a tool: the image should always run the job, and you only add arguments.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 452" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two images and what docker run starts. The API image has no ENTRYPOINT and CMD uvicorn app.main:app --host 0.0.0.0 --port 8000. Plain docker run stackyard-api starts uvicorn. docker run stackyard-api python -c print(1) replaces the CMD and runs python instead, so the API never starts. The nightly job image has ENTRYPOINT python jobs/nightly_scores.py and no CMD. Plain docker run starts the job. Adding --date 2026-11-15 appends the arguments, so the job runs with them; the ENTRYPOINT stays.">
+        <defs>
+          <filter id="s3bSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="67" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <marker id="s3bAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s3bH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s3bL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s3bS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s3bC { font: 600 11px ui-monospace, Menlo, Consolas, monospace; fill: #0E1030; }
+          .s3bK { font: 600 11px ui-monospace, Menlo, Consolas, monospace; fill: #FFFFFF; }
+          .s3bA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s3bN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s3bA" x="44" y="30">YOU TYPE</text>
+        <text class="s3bA" x="450" y="30">THE CONTAINER RUNS</text>
+
+        <g filter="url(#s3bSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="40" width="820" height="180" rx="12" transform="rotate(-0.3 440 130)" fill="#EEF1FD"/>
+          <rect x="44" y="72" width="792" height="40" rx="8" fill="#01005E"/>
+          <rect x="44" y="124" width="360" height="34" rx="8" transform="rotate(-0.6 224 141)" fill="#FFFFFF"/>
+          <rect x="450" y="124" width="386" height="34" rx="8" transform="rotate(0.5 643 141)" fill="#FFFFFF"/>
+          <rect x="44" y="170" width="360" height="34" rx="8" transform="rotate(0.5 224 187)" fill="#FFFFFF"/>
+          <rect x="450" y="170" width="386" height="34" rx="8" transform="rotate(-0.6 643 187)" fill="#FF9F5A"/>
+          <path d="M410 141 L444 141" marker-end="url(#s3bAr)"/>
+          <path d="M410 187 L444 187" marker-end="url(#s3bAr)"/>
+
+          <rect x="30" y="234" width="820" height="180" rx="12" transform="rotate(0.3 440 324)" fill="#EEF1FD"/>
+          <rect x="44" y="266" width="792" height="40" rx="8" fill="#01005E"/>
+          <rect x="44" y="318" width="360" height="34" rx="8" transform="rotate(0.6 224 335)" fill="#FFFFFF"/>
+          <rect x="450" y="318" width="386" height="34" rx="8" transform="rotate(-0.5 643 335)" fill="#FFFFFF"/>
+          <rect x="44" y="364" width="360" height="34" rx="8" transform="rotate(-0.5 224 381)" fill="#FFFFFF"/>
+          <rect x="450" y="364" width="386" height="34" rx="8" transform="rotate(0.6 643 381)" fill="#FFFFFF"/>
+          <path d="M410 335 L444 335" marker-end="url(#s3bAr)"/>
+          <path d="M410 381 L444 381" marker-end="url(#s3bAr)"/>
+        </g>
+
+        <text class="s3bH" x="44" y="62">THE API IMAGE: A SERVICE, SO CMD ONLY</text>
+        <text class="s3bK" x="58" y="96">ENTRYPOINT  none    CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]</text>
+        <text class="s3bC" x="58" y="145">docker run stackyard-api</text>
+        <text class="s3bC" x="464" y="145">uvicorn app.main:app --host 0.0.0.0 --port 8000</text>
+        <text class="s3bC" x="58" y="191">docker run stackyard-api python -c "print(1)"</text>
+        <text class="s3bC" x="464" y="191">python -c "print(1)"</text>
+        <text class="s3bL" x="822" y="191" text-anchor="end">CMD replaced</text>
+
+        <text class="s3bH" x="44" y="256">THE NIGHTLY JOB IMAGE: A TOOL, SO ENTRYPOINT</text>
+        <text class="s3bK" x="58" y="290">ENTRYPOINT ["python", "jobs/nightly_scores.py"]    CMD  none</text>
+        <text class="s3bC" x="58" y="339">docker run stackyard-nightly</text>
+        <text class="s3bC" x="464" y="339">python jobs/nightly_scores.py</text>
+        <text class="s3bC" x="58" y="385">docker run stackyard-nightly --date 2026-11-15</text>
+        <text class="s3bC" x="464" y="385">python jobs/nightly_scores.py --date 2026-11-15</text>
+
+        <text class="s3bN" x="30" y="440">Arguments after the image name replace CMD; ENTRYPOINT stays. Constructed Stackyard example (--date too).</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - CMD is a default you can replace; ENTRYPOINT is the program, and your arguments go to it</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>CMD for a service, ENTRYPOINT for a tool<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>CMD</strong> is the image's default command, and the Dockerfile reference is precise about it: "There can only be one CMD instruction in a Dockerfile. If you list more than one CMD, only the last one takes effect." Anything you type after the image name on <code>docker run</code> replaces it. For the API that is exactly right: <code>docker run stackyard-api</code> starts the service, and <code>docker run stackyard-api python -c "print(1)"</code> lets you check that Python and the packages work without starting uvicorn at all.</p>
+        <p><strong>ENTRYPOINT</strong> "allows you to configure a container that will run as an executable". Whatever you type after the image name is added to it as arguments instead of replacing it. For the nightly job, that is the behaviour you want: the image is the job, and the only thing a scheduler should vary is the arguments. Docker's best-practice guide puts the pairing in one line: use ENTRYPOINT for the image's main command, and CMD for default flags.</p>
+        <p>The test that decides which you need: would anyone ever want to run something other than the main program in this image? For a service, yes (a shell check, a migration, a one-off script), so use CMD. For a single-purpose tool, no, so use ENTRYPOINT.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Shell form and exec form side by side<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>CMD and ENTRYPOINT each come in two spellings. Shell form is a plain string, the way you would type it at a prompt. Exec form is a JSON array, one element per word:</p>
+<pre><code># shell form: one string, split up by a shell
+CMD uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# exec form: the program and each argument, already separated
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
+        <p>Docker's best-practice guide recommends the exec form, <code>["executable", "param1"]</code>, because it avoids shell string munging: nothing reinterprets your quotes, spaces or special characters on the way to the program. hadolint asks for the same thing with DL3025, "Use arguments JSON notation for CMD and ENTRYPOINT arguments". Every preset Dockerfile in the session 4 lab that still uses the shell-form CMD trips that rule; the hardened one does not.</p>
+        <p>One practical trap in exec form: it must be valid JSON, so the quotes are double quotes. <code>CMD ['uvicorn', 'app.main:app']</code> with single quotes is not a JSON array.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>The second CMD that quietly wins.</strong> Dockerfiles grow by copy and paste, and it is easy to end up with a CMD near the top from an old template and another at the bottom. The Dockerfile reference settles it: "only the last one takes effect". Nothing warns you at build time. If a container starts the wrong program, read the file from the bottom up and find the last CMD first.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-3">
+    <div class="section-kicker">
+      <span class="klabel">Part 3 · covers .dockerignore, pinning and a non-root USER</span>
+      <h2>Decide what the builder sees, what it installs, and who it runs as</h2>
+      <span class="tag concept">4 min live</span>
+    </div>
+    <p class="lede">Three habits separate a Dockerfile that works today from one that still works, and still is safe, next quarter. Keep the build context to what the image needs. Pin the base image and every package to an exact version. And stop the app from running as root. On the Constructed Stackyard example, the first habit alone changes what reaches the builder from 604.32 MB in 16 files to 4.31 MB in 7 files, as the session 4 lab prints for rungs 1 and 2, and it keeps the password file off the builder entirely.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 396" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stackyard's 16 files split into two trays by the .dockerignore. Stays on the laptop, 9 files: .venv 412 MB, data 118 MB, .git 63.5 MB, notebooks 6.4 MB, .env holding DB_PASSWORD (highlighted), tests, app/__pycache__, Dockerfile and .dockerignore. Sent to the builder, 7 files, 4.31 MB: app/model.joblib 4.2 MB, requirements.txt, README.md, app/__init__.py, app/main.py, app/scoring.py and jobs/nightly_scores.py. Without the ignore file all 16 files, 604.32 MB, are sent, .env included.">
+        <defs>
+          <filter id="s3cSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="71" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s3cHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+        </defs>
+        <style>
+          .s3cH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s3cL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s3cS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s3cC { font: 600 11px ui-monospace, Menlo, Consolas, monospace; fill: #0E1030; }
+          .s3cA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s3cV { font: 800 16px Inter, sans-serif; fill: #01005E; }
+          .s3cN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s3cH" x="30" y="24">STACKYARD'S BUILD CONTEXT, SORTED BY THE .DOCKERIGNORE</text>
+
+        <g filter="url(#s3cSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="40" width="490" height="300" rx="12" transform="rotate(-0.3 275 190)" fill="#EEF1FD"/>
+          <rect x="550" y="40" width="300" height="300" rx="12" transform="rotate(0.3 700 190)" fill="#FFFFFF"/>
+
+          <rect x="44" y="70" width="280" height="130" rx="10" transform="rotate(-1.2 184 135)" fill="url(#s3cHc)"/>
+          <rect x="336" y="70" width="170" height="90" rx="10" transform="rotate(1.4 421 115)" fill="#FFFFFF"/>
+          <rect x="336" y="172" width="170" height="70" rx="10" transform="rotate(-1.6 421 207)" fill="#FFFFFF"/>
+          <rect x="44" y="212" width="150" height="56" rx="10" transform="rotate(1.8 119 240)" fill="#FFFFFF"/>
+          <rect x="206" y="212" width="118" height="56" rx="10" transform="rotate(-2.4 265 240)" fill="#FF9F5A"/>
+          <rect x="44" y="282" width="90" height="40" rx="8" transform="rotate(-2 89 302)" fill="#FFFFFF"/>
+          <rect x="144" y="282" width="136" height="40" rx="8" transform="rotate(1.5 212 302)" fill="#FFFFFF"/>
+          <rect x="290" y="282" width="96" height="40" rx="8" transform="rotate(-1.4 338 302)" fill="#FFFFFF"/>
+          <rect x="396" y="282" width="112" height="40" rx="8" transform="rotate(2 452 302)" fill="#FFFFFF"/>
+
+          <rect x="564" y="70" width="272" height="54" rx="8" transform="rotate(-0.8 700 97)" fill="#EEF1FD"/>
+          <rect x="564" y="130" width="272" height="28" rx="6" transform="rotate(0.6 700 144)" fill="#EEF1FD"/>
+          <rect x="564" y="164" width="272" height="28" rx="6" transform="rotate(-0.5 700 178)" fill="#EEF1FD"/>
+          <rect x="564" y="198" width="272" height="28" rx="6" transform="rotate(0.7 700 212)" fill="#EEF1FD"/>
+          <rect x="564" y="232" width="272" height="28" rx="6" transform="rotate(-0.6 700 246)" fill="#EEF1FD"/>
+          <rect x="564" y="266" width="272" height="28" rx="6" transform="rotate(0.5 700 280)" fill="#EEF1FD"/>
+          <rect x="564" y="300" width="272" height="28" rx="6" transform="rotate(-0.7 700 314)" fill="#EEF1FD"/>
+        </g>
+
+        <text class="s3cA" x="44" y="58">STAYS ON THE LAPTOP</text>
+        <text class="s3cS" x="506" y="58" text-anchor="end">9 files, never sent</text>
+        <text class="s3cA" x="564" y="58">SENT TO THE BUILDER</text>
+        <text class="s3cS" x="836" y="58" text-anchor="end">7 files, 4.31 MB</text>
+
+        <text class="s3cC" x="62" y="96">.venv/</text>
+        <text class="s3cV" x="62" y="122">412 MB</text>
+        <text class="s3cC" x="352" y="94">data/</text>
+        <text class="s3cV" x="352" y="120">118 MB</text>
+        <text class="s3cS" x="352" y="140">one parquet file</text>
+        <text class="s3cC" x="352" y="196">.git/</text>
+        <text class="s3cL" x="352" y="218">63.5 MB of history</text>
+        <text class="s3cC" x="58" y="236">notebooks/</text>
+        <text class="s3cS" x="58" y="254">6.4 MB</text>
+        <text class="s3cC" x="220" y="236">.env</text>
+        <text class="s3cC" x="220" y="254">DB_PASSWORD</text>
+        <text class="s3cC" x="56" y="306">tests/</text>
+        <text class="s3cC" x="156" y="306">app/__pycache__/</text>
+        <text class="s3cC" x="302" y="306">Dockerfile</text>
+        <text class="s3cC" x="406" y="306">.dockerignore</text>
+
+        <text class="s3cC" x="578" y="94">app/model.joblib</text>
+        <text class="s3cL" x="822" y="94" text-anchor="end">4.2 MB</text>
+        <text class="s3cS" x="578" y="112">the trained model the API loads</text>
+        <text class="s3cC" x="578" y="148">requirements.txt</text>
+        <text class="s3cC" x="578" y="182">README.md</text>
+        <text class="s3cC" x="578" y="216">app/__init__.py</text>
+        <text class="s3cC" x="578" y="250">app/main.py</text>
+        <text class="s3cC" x="578" y="284">app/scoring.py</text>
+        <text class="s3cC" x="578" y="318">jobs/nightly_scores.py</text>
+
+        <text class="s3cN" x="30" y="364">Without the ignore file, all 16 files (604.32 MB) were sent, .env with them. Constructed Stackyard example.</text>
+        <text class="s3cN" x="30" y="384">Boxes sized by role, not to scale; sizes are constructed and match what the session 4 lab prints.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - the biggest win and the safest one are the same file: what the builder never sees, no image can leak</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Pin the base, pin every package<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>The base.</strong> Write <code>FROM python:3.12-slim</code>, never <code>FROM python</code> or <code>FROM python:latest</code>. At the time of writing, <code>latest</code> is Python 3.15.2, not the 3.12 that Stackyard was written and tested on, and it is the full image: 419.02 MB compressed, as Docker Hub lists it, against 43.27 MB for <code>python:3.12-slim</code>. hadolint has two rules for this: DL3006 "Always tag the version of an image explicitly." and DL3007 "Using latest is prone to errors if the image will ever update. Pin the version explicitly to a release tag." A tag can still be re-pointed by its publisher; pinning to a digest fixes it completely, which session 2 showed and session 4 measures.</p>
+        <p><strong>The packages.</strong> Every package, including the ones you never asked for by name, with <code>==</code> and an exact version. Stackyard's API needs fourteen, and the build-along pins all of them to the releases on PyPI at the time of writing: fastapi, starlette, pydantic, pydantic-core and uvicorn for the API; pandas, numpy, python-dateutil and tzdata for the data; scikit-learn, scipy, joblib and threadpoolctl for the model; psycopg2-binary for Postgres, the one session 1 found installed by hand and missing from the file.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Why non-root, and what hadolint does and does not check<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Unless a Dockerfile says otherwise, the app in the container runs as root. Docker's best-practice guide gives the rule in one sentence: "If a service can run without privileges, use USER to change to a non-root user." A scoring API needs no privileges: it reads its own code and model and listens on port 8000. So Stackyard creates an ordinary account with <code>useradd</code> and switches to it with <code>USER</code> before the CMD. If something ever goes wrong inside the process, it goes wrong with an ordinary user's permissions.</p>
+        <p>Here is the part people miss. hadolint's DL3002 reads "Last user should not be root", and it fires only when the last <code>USER</code> line in the file names root. A Dockerfile with no USER line at all, which is most of them, does not trip it, even though the container then runs as root by default. A clean hadolint run is therefore not proof of a non-root image. The session 4 lab closes that gap with a rule of its own, DKR-USER, which fires when the final stage never sets USER, and it labels the rule as the lab's, not hadolint's.</p>
+        <p>If you have Docker, check any image you already use: <code>docker image inspect --format '{{.Config.User}}' IMAGE</code>. An empty answer means root.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>What "slim" leaves out.</strong> The official python image's documentation describes the slim variant as containing "only the minimal Debian packages needed to run python". What is missing is the toolchain for compiling extension modules. That is fine as long as pip finds a ready-built wheel for every package, and at the time of writing all fourteen of Stackyard's packages publish a ready-built wheel on PyPI that installs on slim (a cp312 manylinux wheel, or a pure-Python one). Add a package that has no wheel for your platform, though, and the install fails on slim where it worked on the full image. The fix is a deliberate one (install the build tools, or build in a separate stage, which is session 6), not a quiet switch back to <code>latest</code>.</p>
+    </div>
+  </section>
+
+  <section class="section" id="demo-1">
+    <div class="section-kicker">
+      <span class="klabel">Build-along</span>
+      <h2>Containerise the Stackyard API</h2>
+      <span class="tag demo">★ 22 min · everyone builds</span>
+    </div>
+    <p class="lede">Constructed Stackyard example. You write the three files that turn Ana's scoring API into an image: the pinned requirements, the ignore file, and the Dockerfile itself, one commented line at a time. Then you review it against the lint rules the way a reviewer would, by reading, before any tool runs. Type each file into your own editor as you go; the boxes below are the reference version to compare against. No Docker install needed tonight.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 492" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The finished nine-line Dockerfile with each line tagged by what it writes down. FROM python:3.12-slim carries the Python version. WORKDIR /app replaces a home-folder path with one absolute folder. COPY requirements.txt and RUN pip install carry the packages. COPY app/ carries the code. RUN useradd and USER stackyard make the app run as an ordinary user. EXPOSE 8000 documents the port. CMD in exec form carries the start command. Below, highlighted: what is deliberately not in the image. OS libraries get no install line unless an import check fails. Environment variables, the data file, Postgres and the clock arrive in session 5.">
+        <defs>
+          <filter id="s3dSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="83" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <marker id="s3dAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s3dH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s3dL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s3dS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s3dC { font: 600 11px ui-monospace, Menlo, Consolas, monospace; fill: #0E1030; }
+          .s3dA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s3dN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s3dH" x="30" y="24">THE FINISHED DOCKERFILE, AND WHICH SESSION 1 DEPENDENCY EACH LINE WRITES DOWN</text>
+
+        <g filter="url(#s3dSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="44" width="510" height="284" rx="12" transform="rotate(-0.3 285 186)" fill="#FFFFFF"/>
+          <rect x="580" y="53" width="270" height="24" rx="8" transform="rotate(0.8 715 65)" fill="#EEF1FD"/>
+          <rect x="580" y="83" width="270" height="24" rx="8" transform="rotate(-0.7 715 95)" fill="#EEF1FD"/>
+          <rect x="580" y="113" width="270" height="24" rx="8" transform="rotate(0.6 715 125)" fill="#EEF1FD"/>
+          <rect x="580" y="143" width="270" height="24" rx="8" transform="rotate(-0.8 715 155)" fill="#EEF1FD"/>
+          <rect x="580" y="173" width="270" height="24" rx="8" transform="rotate(0.7 715 185)" fill="#EEF1FD"/>
+          <rect x="580" y="203" width="270" height="24" rx="8" transform="rotate(-0.6 715 215)" fill="#EEF1FD"/>
+          <rect x="580" y="233" width="270" height="24" rx="8" transform="rotate(0.8 715 245)" fill="#EEF1FD"/>
+          <rect x="580" y="263" width="270" height="24" rx="8" transform="rotate(-0.7 715 275)" fill="#EEF1FD"/>
+          <rect x="580" y="293" width="270" height="24" rx="8" transform="rotate(0.6 715 305)" fill="#EEF1FD"/>
+          <path d="M546 66 L574 66" marker-end="url(#s3dAr)"/>
+          <path d="M546 96 L574 96" marker-end="url(#s3dAr)"/>
+          <path d="M546 126 L574 126" marker-end="url(#s3dAr)"/>
+          <path d="M546 156 L574 156" marker-end="url(#s3dAr)"/>
+          <path d="M546 186 L574 186" marker-end="url(#s3dAr)"/>
+          <path d="M546 216 L574 216" marker-end="url(#s3dAr)"/>
+          <path d="M546 246 L574 246" marker-end="url(#s3dAr)"/>
+          <path d="M546 276 L574 276" marker-end="url(#s3dAr)"/>
+          <path d="M546 306 L574 306" marker-end="url(#s3dAr)"/>
+          <rect x="30" y="346" width="820" height="104" rx="12" transform="rotate(-0.3 440 398)" fill="#FF9F5A"/>
+        </g>
+
+        <text class="s3dC" x="46" y="70">FROM python:3.12-slim</text>
+        <text class="s3dC" x="46" y="100">WORKDIR /app</text>
+        <text class="s3dC" x="46" y="130">COPY requirements.txt .</text>
+        <text class="s3dC" x="46" y="160">RUN pip install --no-cache-dir -r requirements.txt</text>
+        <text class="s3dC" x="46" y="190">COPY app/ ./app/</text>
+        <text class="s3dC" x="46" y="220">RUN useradd --create-home --uid 10001 stackyard</text>
+        <text class="s3dC" x="46" y="250">USER stackyard</text>
+        <text class="s3dC" x="46" y="280">EXPOSE 8000</text>
+        <text class="s3dC" x="46" y="310">CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]</text>
+
+        <text class="s3dL" x="592" y="70">1 Python version: pinned base</text>
+        <text class="s3dL" x="592" y="100">5 Files: one folder, no /Users/ana</text>
+        <text class="s3dL" x="592" y="130">2 Packages: the pinned list first</text>
+        <text class="s3dL" x="592" y="160">2 Packages: installed, no cache</text>
+        <text class="s3dL" x="592" y="190">7 Code: app/ only, nothing else</text>
+        <text class="s3dL" x="592" y="220">User: an ordinary account</text>
+        <text class="s3dL" x="592" y="250">User: the app is not root</text>
+        <text class="s3dL" x="592" y="280">Port: documented; -p publishes</text>
+        <text class="s3dL" x="592" y="310">Start command: exec form</text>
+
+        <text class="s3dH" x="46" y="370">NOT WRITTEN INTO THE IMAGE, ON PURPOSE</text>
+        <text class="s3dL" x="46" y="392">3 OS libraries: no install line unless the import check in step 4 fails</text>
+        <text class="s3dL" x="46" y="414">4 Env variables: DB_PASSWORD and STACKYARD_DATA arrive at run time (session 5)</text>
+        <text class="s3dL" x="46" y="436">5 Data and Postgres: a volume and a db service (session 5) · 6 Clock: TZ and a schedule (session 5)</text>
+
+        <text class="s3dN" x="30" y="476">Numbers are the seven kinds from session 1. Constructed Stackyard example.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - nine lines write down five of the seven hidden dependencies; the other two belong outside the image</figcaption>
+    </figure>
+
+    <div class="steps">
+      <div class="step">
+        <p><strong>Pin every package.</strong> Start from session 1's finding: four names with no versions, and psycopg2-binary installed by hand and missing. Write out the full list the API imports, directly or through another package, each pinned with <code>==</code> to the release on PyPI at the time of writing. In a real project, <code>pip freeze</code> in a known-good environment prints this list for you; check it against what the code imports and drop anything that was only there for a notebook.</p>
+        <div class="prompt-box good"><span class="label">★ Step 1 · requirements.txt, every version pinned</span># API
+fastapi==0.163.1
+starlette==1.10.0
+pydantic==2.14.3
+pydantic-core==2.50.4
+uvicorn==0.54.0
+# data
+pandas==3.1.1
+numpy==2.5.5
+python-dateutil==4.0.0
+tzdata==2026.6
+# model
+scikit-learn==1.9.1
+scipy==1.18.1
+joblib==1.6.0
+threadpoolctl==3.8.0
+# database
+psycopg2-binary==2.9.13</div>
+      </div>
+      <div class="step">
+        <p><strong>Decide what the builder may see.</strong> The ignore file sits at the root of the build context, next to the Dockerfile. Each line is a pattern; <code>#</code> starts a comment. Read it against the figure in Part 3: the virtualenv, the data, the Git history, the notebooks and the tests stay on the laptop, and so does <code>.env</code>. Note the pair at the bottom of the middle block: <code>**/__pycache__</code> catches the cache folder inside <code>app/</code>, which <code>*.pyc</code> alone would miss, because a pattern without <code>**/</code> only matches at the root.</p>
+        <div class="prompt-box good"><span class="label">★ Step 2 · .dockerignore</span># keep the build context to what the image needs
+.git
+.venv
+.env
+data/
+notebooks/
+tests/
+**/__pycache__
+*.pyc
+Dockerfile
+.dockerignore</div>
+      </div>
+      <div class="step">
+        <p><strong>Write the Dockerfile, one line and one comment at a time.</strong> Type each instruction only after you can say what it writes and when. Put each comment on its own line: Docker treats <code>#</code> as a comment only at the start of a line, so a comment tacked onto the end of an instruction becomes part of its arguments. Order matters: the dependency list is copied and installed before the code, so a change to <code>app/scoring.py</code> leaves the install alone. Session 4 measures how much that saves.</p>
+        <div class="prompt-box good"><span class="label">★ Step 3 · Dockerfile, single stage, commented</span># Python version (session 1): 3.12 on slim Debian, pinned, never latest
+FROM python:3.12-slim
+
+# One absolute folder for everything below (DL3000)
+WORKDIR /app
+
+# The dependency list alone, before any code, so code edits do not reinstall
+COPY requirements.txt .
+
+# The 14 pinned packages; --no-cache-dir keeps pip's cache out of the layer (DL3042)
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Only the API's code and model; .dockerignore keeps the rest on the laptop
+COPY app/ ./app/
+
+# An ordinary account with a fixed uid
+RUN useradd --create-home --uid 10001 stackyard
+
+# From here on, including the running API, nothing runs as root
+USER stackyard
+
+# Documents the port the API listens on; docker run -p publishes it
+EXPOSE 8000
+
+# The start command in exec form (DL3025); docker run arguments replace it
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]</div>
+      </div>
+      <div class="step">
+        <p><strong>Review it the way a reviewer would.</strong> The session 4 lab implements thirteen lint rules: ten modelled on hadolint rule ids and three of its own. Go through them by reading and predict, rule by rule, whether each one fires on your file. The six most likely to catch a first Dockerfile are DL3006, DL3007, DL3042, DL3025, DL3064 and DKR-USER; check those first. Then paste the file into the session 4 lab to check your prediction; its number is the one that counts. Finish with the one dependency from session 1 that is still open, the hand-installed OS library.</p>
+        <div class="prompt-box good"><span class="label">★ Step 4 · one reviewer's reading, rule by rule</span>DL3006  tag the base explicitly        quiet: python:3.12-slim
+DL3007  do not build on latest         quiet: no latest
+DL3000  absolute WORKDIR               quiet: /app
+DL3020  COPY, not ADD                  quiet: no ADD
+DL3015  --no-install-recommends        quiet: no apt-get
+DL3009  delete the apt lists           quiet: no apt-get
+DL3042  pip --no-cache-dir             quiet: flag present
+DL3025  JSON form for CMD/ENTRYPOINT   quiet: exec form
+DL3002  last user is not root          quiet: USER stackyard
+DL3064  no secrets in ARG or ENV       quiet: no ARG, no ENV
+DKR-ORDER    project copied before install   quiet: requirements first
+DKR-USER     final stage never sets USER     quiet: it does
+DKR-CONTEXT  whole context copied, .env in   quiet: COPY app/ only
+
+Prediction by reading: nothing fires. Check it in the session 4 lab.
+
+Still open from session 1: libomp, installed by hand on the Mac.
+No apt-get line until there is evidence one is needed. If you have
+Docker, build the image and run, overriding the CMD:
+  docker run --rm stackyard-api python -c "import sklearn"
+If it imports, write that check into the inventory as the proof.
+Your output will differ from anyone else's run; the import is the test.</div>
+      </div>
+      <div class="step">
+        <p><strong>Score it, then save it.</strong> Grade the Dockerfile on the six rows below. Commit the three files, <code>requirements.txt</code>, <code>.dockerignore</code> and <code>Dockerfile</code>, at the root of the repository: together they are piece three of Stackyard's container kit. Session 4 puts this Dockerfile on the bench and measures how fast it rebuilds after a one-line change, and asks whether every line sits in the best place for the cache.</p>
+      </div>
+    </div>
+
+    <div class="scorecard" data-msgs="Every row solid. This piece of the kit is ready for the next one.|Strong. Take the weakest row into the next session and fix that one thing.|Halfway is exactly where this should be. Pick the two lowest rows and only those.|Mostly not yet, which is fine this early. Fix the lowest row before the next session." data-title="Dockerfile review: six rows" data-foot="A row at 0 works on the day you build it and fails on a day you did not choose.">
+      <div class="sc-row"><div class="sc-q">The base image names an exact version tag, not latest and not a bare name
+        <em>python:3.12-slim scores the point; python and python:latest score 0.</em></div></div>
+      <div class="sc-row"><div class="sc-q">Every package in requirements.txt is pinned with == to an exact version
+        <em>Including the ones you never imported by name, and the one installed by hand.</em></div></div>
+      <div class="sc-row"><div class="sc-q">.dockerignore keeps .env, .venv, .git and data out of the build context
+        <em>What the builder never receives cannot end up in a layer.</em></div></div>
+      <div class="sc-row"><div class="sc-q">requirements.txt is copied and installed before the application code
+        <em>A code edit should never reinstall fourteen packages.</em></div></div>
+      <div class="sc-row"><div class="sc-q">CMD or ENTRYPOINT is in exec form, and there is exactly one CMD
+        <em>Only the last CMD takes effect; a JSON array avoids shell string munging.</em></div></div>
+      <div class="sc-row"><div class="sc-q">The final USER is an ordinary account, and no secret sits in ARG or ENV
+        <em>No USER line at all scores 0, even though hadolint's DL3002 stays quiet.</em></div></div>
+    </div>
+
+    <div class="callout tip">
+      <p><strong>Read your Dockerfile from the container's side.</strong> For every line, ask two questions out loud: "does this change files or only settings?" and "if I deleted this line, what would a teammate have to know that is not written anywhere?" A line with no answer to the second question can probably go; a dependency with no line is a hidden one still.</p>
+    </div>
+  </section>
+
+  <section class="section" id="exercise">
+    <div class="section-kicker">
+      <span class="klabel">Homework</span>
+      <h2>Before session 4</h2>
+      <span class="tag exercise">30 min</span>
+    </div>
+    <ol>
+      <li><strong>Write a Dockerfile for a project of your own.</strong> Use the build-along shape: pinned base, WORKDIR, requirements copied and installed first, code second, a non-root USER, EXPOSE if it serves something, CMD or ENTRYPOINT in exec form. Comment every line, each comment on its own line.</li>
+      <li><strong>Write its .dockerignore and list what survives.</strong> Walk your project folder and sort every top-level entry into "stays on the laptop" or "sent to the builder". Check that every file holding a secret, and every folder that only matters on your machine, lands in the first tray. Remember <code>**/</code> for anything that lives below the root.</li>
+      <li><strong>Choose ENTRYPOINT or CMD on purpose.</strong> Write one sentence for your project: is it a service someone might want to run something else inside, or a tool that should always run the same program? Then write the <code>docker run</code> line a teammate would type, with and without extra arguments, and what each one starts.</li>
+      <li><strong>Bring a lint count.</strong> Paste your Dockerfile into the session 4 lab, or run hadolint on it if you have it, and note every rule that fires. If your file has no USER line, check whether DKR-USER caught what hadolint alone would not. Bring the list to session 4.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="quiz">
+    <div class="section-kicker">
+      <span class="klabel">Check yourself</span>
+      <h2>Three questions</h2>
+    </div>
+    <p>Clear all three and session 3 gets stamped in your passport.</p>
+
+    <div class="quiz-q" data-answer="2">
+      <p class="qtext">1 · Stackyard's Dockerfile says <code>EXPOSE 8000</code>. A teammate runs <code>docker run stackyard-api</code> with no other flags and cannot reach the API from their browser at <code>localhost:8000</code>. What is going on?</p>
+      <button class="qopt" type="button">A · EXPOSE only works with ENTRYPOINT, not with CMD</button>
+      <button class="qopt" type="button">B · The image is broken and needs rebuilding with EXPOSE moved above COPY</button>
+      <button class="qopt" type="button">C · EXPOSE documents the port but does not publish it; publishing is a run-time choice, such as <code>docker run -p 8000:8000 stackyard-api</code></button>
+      <button class="qopt" type="button">D · EXPOSE opens the port on every machine on the network, so the firewall is blocking it</button>
+      <p class="qwhy">The Dockerfile reference says EXPOSE "doesn't actually publish the port". It is a note from the image's author to whoever runs it. The <code>-p</code> flag (or <code>ports:</code> in Compose, session 5) is what connects a host port to the container.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="0">
+      <p class="qtext">2 · Image A ends with <code>CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]</code>. Image B is identical except that the same array is written as <code>ENTRYPOINT</code> instead. You run each one as <code>docker run IMAGE python -c "print(1)"</code>. What starts?</p>
+      <button class="qopt" type="button">A · In A, the arguments replace the CMD, so python runs and prints 1. In B, the ENTRYPOINT stays and the arguments are added to it, so uvicorn starts with <code>python -c "print(1)"</code> tacked onto its arguments and python never runs on its own</button>
+      <button class="qopt" type="button">B · Both print 1, because arguments on docker run always win</button>
+      <button class="qopt" type="button">C · Both start uvicorn, because the image's command always wins</button>
+      <button class="qopt" type="button">D · A starts uvicorn and B prints 1</button>
+      <p class="qwhy">Arguments after the image name replace CMD and are appended to ENTRYPOINT. That is why a service like the API uses CMD (you can still run a check inside it), and a single-purpose tool like the nightly job uses ENTRYPOINT (you only ever pass it arguments).</p>
+    </div>
+
+    <div class="quiz-q" data-answer="3">
+      <p class="qtext">3 · A .dockerignore contains only <code>*.pyc</code>. Why does <code>app/__pycache__/scoring.cpython-312.pyc</code> still reach the builder?</p>
+      <button class="qopt" type="button">A · .dockerignore only applies to folders, never to single files</button>
+      <button class="qopt" type="button">B · Python files are always sent, whatever the ignore file says</button>
+      <button class="qopt" type="button">C · The pattern needs quotes around it to take effect</button>
+      <button class="qopt" type="button">D · Matching follows Go's filepath.Match rules, so <code>*.pyc</code> matches only at the root of the context; a file one folder down needs <code>**/*.pyc</code>, or <code>**/__pycache__</code> for the whole folder</button>
+      <p class="qwhy">Docker's build context documentation spells out that patterns are matched with Go's filepath.Match from the root of the context. <code>**</code> matches any number of directories, which is why Stackyard's ignore file carries <code>**/__pycache__</code> as well as <code>*.pyc</code>. The session 4 lab's unit tests encode exactly this case.</p>
+    </div>
+
+    <p class="quiz-score"></p>
+  </section>
+
+  <section class="section" id="official">
+    <div class="section-kicker">
+      <span class="klabel">Sources covered</span>
+      <h2>What this session teaches, and where it came from</h2>
+    </div>
+    <div class="covered">
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Dockerfile instructions</span><span class="note">Docker Docs, "Dockerfile reference": EXPOSE does not publish, only the last CMD takes effect, ENTRYPOINT as an executable; read at source 2026-11-16</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Building best practices</span><span class="note">Docker Docs, "Building best practices": absolute WORKDIR, COPY over ADD, ENTRYPOINT plus CMD in exec form, USER for non-root, mutable tags; read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Build context and .dockerignore</span><span class="note">Docker Docs, "Build context": root of the context, Go filepath.Match, ** and ! exceptions, last match wins; read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">ARG, ENV and secrets</span><span class="note">Docker Docs, "Build secrets": build args and env vars persist in the final image; read at source; the secret mount is session 6</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">hadolint rules</span><span class="note">hadolint README rule table (GPL-3.0), read at source; the session 4 lab models ten ids and adds three rules of its own, including DKR-USER</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">python image tags and the slim variant</span><span class="note">docker-library/docs python README and the Docker Hub tag API (latest = 3.15.2; 43.27 MB and 419.02 MB compressed), read 2026-11-16; re-verify</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Pinned package versions</span><span class="note">PyPI JSON API, the fourteen releases and their cp312 wheels, read 2026-11-16</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Stackyard</span><span class="note">Constructed example; the files, sizes and the --date flag are invented and labelled</span></div>
+    </div>
+    <p class="mono" style="margin-top:14px">Every fact on this page, and its verification tier, is recorded in the course's source map.</p>
+  </section>
+
+  <section class="cheat" id="cheatsheet">
+    <h3>Session 3 cheat sheet <span>· pin this</span></h3>
+    <div class="grid-2">
+      <div class="cheat-item"><b>Two moments</b><span>RUN and COPY change files at build time; ENV, EXPOSE, CMD and USER change settings for run time.</span></div>
+      <div class="cheat-item"><b>EXPOSE is a note</b><span>It documents the port. <code>-p 8000:8000</code> at run time publishes it.</span></div>
+      <div class="cheat-item"><b>CMD vs ENTRYPOINT</b><span>Run arguments replace CMD and are appended to ENTRYPOINT. Service: CMD. Tool: ENTRYPOINT.</span></div>
+      <div class="cheat-item"><b>Exec form</b><span><code>["program", "arg"]</code>, double quotes, one CMD. Only the last CMD takes effect.</span></div>
+      <div class="cheat-item"><b>.dockerignore</b><span>Root of the context; <code>*.pyc</code> matches only at the root, so use <code>**/</code> below it. Keep .env out.</span></div>
+      <div class="cheat-item"><b>Pin and drop root</b><span>An exact base tag, == on every package, and a USER that is not root. No USER line passes hadolint anyway.</span></div>
+    </div>
+  </section>
+
+  <div class="callout next">
+    <span class="nx-pill">Next session</span>
+    <p>Stackyard's API has a Dockerfile now. Session 4 asks how long it takes to rebuild. The layer cache lab reads Dockerfiles in the page, applies Docker's documented cache rules for whichever file you change, and prints which layers rebuild, a modelled rebuild time, the image size and the lint. Bring tonight's Dockerfile and paste it in.</p>
+  </div>
+
+  <footer class="pagefoot">
+    <span>Session 3 of 6 · learn-docker-containers-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span><a href="02-images-containers-layers.html">← Prev: Images, containers, layers: the mental model</a> &nbsp;·&nbsp; <a href="04-the-layer-cache-lab.html">Next: The layer cache lab →</a></span>
+  </footer>
+
+</main>
+
+<script src="../assets/app.js?v=1"></script>
+</body>
+</html>

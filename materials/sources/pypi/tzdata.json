@@ -1,0 +1,17 @@
+{
+ "name": "tzdata",
+ "version": "2026.6",
+ "license": "Apache-2.0",
+ "files": [
+  {
+   "filename": "tzdata-2026.6-py2.py3-none-any.whl",
+   "size": 348210,
+   "upload_time": "2026-10-28T09:57:07"
+  },
+  {
+   "filename": "tzdata-2026.6.tar.gz",
+   "size": 201017,
+   "upload_time": "2026-10-28T09:57:09"
+  }
+ ]
+}

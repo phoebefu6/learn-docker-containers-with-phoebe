@@ -1,0 +1,707 @@
+{
+ "name": "pydantic_core",
+ "version": "2.50.4",
+ "license": "MIT",
+ "files": [
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-macosx_10_12_x86_64.whl",
+   "size": 2172546,
+   "upload_time": "2026-11-05T09:11:15"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-macosx_11_0_arm64.whl",
+   "size": 2131205,
+   "upload_time": "2026-11-05T09:11:18"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-manylinux1_i686.manylinux_2_5_i686.whl",
+   "size": 2284431,
+   "upload_time": "2026-11-05T09:11:20"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+   "size": 2131058,
+   "upload_time": "2026-11-05T09:11:21"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-manylinux2014_armv7l.manylinux_2_17_armv7l.whl",
+   "size": 2216460,
+   "upload_time": "2026-11-05T09:11:23"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 2403715,
+   "upload_time": "2026-11-05T09:11:25"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-manylinux2014_s390x.manylinux_2_17_s390x.whl",
+   "size": 2454737,
+   "upload_time": "2026-11-05T09:11:26"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 2257210,
+   "upload_time": "2026-11-05T09:11:28"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-manylinux_2_31_riscv64.whl",
+   "size": 2282013,
+   "upload_time": "2026-11-05T09:11:30"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-musllinux_1_1_aarch64.whl",
+   "size": 2322022,
+   "upload_time": "2026-11-05T09:11:32"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-musllinux_1_1_armv7l.whl",
+   "size": 2493416,
+   "upload_time": "2026-11-05T09:11:34"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-musllinux_1_1_x86_64.whl",
+   "size": 2499741,
+   "upload_time": "2026-11-05T09:11:36"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-win32.whl",
+   "size": 2134504,
+   "upload_time": "2026-11-05T09:11:37"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp310-cp310-win_amd64.whl",
+   "size": 2259729,
+   "upload_time": "2026-11-05T09:11:39"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-macosx_10_12_x86_64.whl",
+   "size": 2170584,
+   "upload_time": "2026-11-05T09:11:41"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-macosx_11_0_arm64.whl",
+   "size": 2128471,
+   "upload_time": "2026-11-05T09:11:42"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-manylinux1_i686.manylinux_2_5_i686.whl",
+   "size": 2281509,
+   "upload_time": "2026-11-05T09:11:44"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+   "size": 2128064,
+   "upload_time": "2026-11-05T09:11:46"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-manylinux2014_armv7l.manylinux_2_17_armv7l.whl",
+   "size": 2214472,
+   "upload_time": "2026-11-05T09:11:47"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 2401153,
+   "upload_time": "2026-11-05T09:11:49"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-manylinux2014_s390x.manylinux_2_17_s390x.whl",
+   "size": 2453307,
+   "upload_time": "2026-11-05T09:11:51"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 2253434,
+   "upload_time": "2026-11-05T09:11:52"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-manylinux_2_31_riscv64.whl",
+   "size": 2279365,
+   "upload_time": "2026-11-05T09:11:54"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-musllinux_1_1_aarch64.whl",
+   "size": 2319407,
+   "upload_time": "2026-11-05T09:11:56"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-musllinux_1_1_armv7l.whl",
+   "size": 2489900,
+   "upload_time": "2026-11-05T09:11:58"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-musllinux_1_1_x86_64.whl",
+   "size": 2497732,
+   "upload_time": "2026-11-05T09:11:59"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-win32.whl",
+   "size": 2132347,
+   "upload_time": "2026-11-05T09:12:01"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-win_amd64.whl",
+   "size": 2255970,
+   "upload_time": "2026-11-05T09:12:03"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp311-cp311-win_arm64.whl",
+   "size": 2196799,
+   "upload_time": "2026-11-05T09:12:05"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-macosx_10_12_x86_64.whl",
+   "size": 2231444,
+   "upload_time": "2026-11-05T09:12:06"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-macosx_11_0_arm64.whl",
+   "size": 2108048,
+   "upload_time": "2026-11-05T09:12:08"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-manylinux1_i686.manylinux_2_5_i686.whl",
+   "size": 2256866,
+   "upload_time": "2026-11-05T09:12:10"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+   "size": 2125682,
+   "upload_time": "2026-11-05T09:12:12"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-manylinux2014_armv7l.manylinux_2_17_armv7l.whl",
+   "size": 2197108,
+   "upload_time": "2026-11-05T09:12:13"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 2380521,
+   "upload_time": "2026-11-05T09:12:15"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-manylinux2014_s390x.manylinux_2_17_s390x.whl",
+   "size": 2457436,
+   "upload_time": "2026-11-05T09:12:17"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 2261727,
+   "upload_time": "2026-11-05T09:12:19"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-manylinux_2_31_riscv64.whl",
+   "size": 2262071,
+   "upload_time": "2026-11-05T09:12:20"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-musllinux_1_1_aarch64.whl",
+   "size": 2298931,
+   "upload_time": "2026-11-05T09:12:22"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-musllinux_1_1_armv7l.whl",
+   "size": 2474285,
+   "upload_time": "2026-11-05T09:12:24"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-musllinux_1_1_x86_64.whl",
+   "size": 2498172,
+   "upload_time": "2026-11-05T09:12:26"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-win32.whl",
+   "size": 2119592,
+   "upload_time": "2026-11-05T09:12:27"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-win_amd64.whl",
+   "size": 2264064,
+   "upload_time": "2026-11-05T09:12:29"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp312-cp312-win_arm64.whl",
+   "size": 2167792,
+   "upload_time": "2026-11-05T09:12:31"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-macosx_10_12_x86_64.whl",
+   "size": 2232841,
+   "upload_time": "2026-11-05T09:12:32"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-macosx_11_0_arm64.whl",
+   "size": 2108326,
+   "upload_time": "2026-11-05T09:12:34"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-manylinux1_i686.manylinux_2_5_i686.whl",
+   "size": 2256276,
+   "upload_time": "2026-11-05T09:12:36"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+   "size": 2125469,
+   "upload_time": "2026-11-05T09:12:37"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-manylinux2014_armv7l.manylinux_2_17_armv7l.whl",
+   "size": 2196397,
+   "upload_time": "2026-11-05T09:12:39"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 2380442,
+   "upload_time": "2026-11-05T09:12:41"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-manylinux2014_s390x.manylinux_2_17_s390x.whl",
+   "size": 2457747,
+   "upload_time": "2026-11-05T09:12:42"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 2260946,
+   "upload_time": "2026-11-05T09:12:44"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-manylinux_2_31_riscv64.whl",
+   "size": 2261921,
+   "upload_time": "2026-11-05T09:12:45"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-musllinux_1_1_aarch64.whl",
+   "size": 2298475,
+   "upload_time": "2026-11-05T09:12:47"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-musllinux_1_1_armv7l.whl",
+   "size": 2473226,
+   "upload_time": "2026-11-05T09:12:48"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-musllinux_1_1_x86_64.whl",
+   "size": 2498764,
+   "upload_time": "2026-11-05T09:12:50"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-win32.whl",
+   "size": 2119158,
+   "upload_time": "2026-11-05T09:12:51"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-win_amd64.whl",
+   "size": 2262887,
+   "upload_time": "2026-11-05T09:12:53"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp313-cp313-win_arm64.whl",
+   "size": 2167878,
+   "upload_time": "2026-11-05T09:12:54"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-macosx_10_12_x86_64.whl",
+   "size": 2236841,
+   "upload_time": "2026-11-05T09:12:56"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-macosx_11_0_arm64.whl",
+   "size": 2108348,
+   "upload_time": "2026-11-05T09:12:57"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-manylinux1_i686.manylinux_2_5_i686.whl",
+   "size": 2261331,
+   "upload_time": "2026-11-05T09:12:59"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+   "size": 2128667,
+   "upload_time": "2026-11-05T09:13:00"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-manylinux2014_armv7l.manylinux_2_17_armv7l.whl",
+   "size": 2198183,
+   "upload_time": "2026-11-05T09:13:02"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 2386279,
+   "upload_time": "2026-11-05T09:13:03"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-manylinux2014_s390x.manylinux_2_17_s390x.whl",
+   "size": 2464343,
+   "upload_time": "2026-11-05T09:13:05"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 2265388,
+   "upload_time": "2026-11-05T09:13:07"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-manylinux_2_31_riscv64.whl",
+   "size": 2267012,
+   "upload_time": "2026-11-05T09:13:09"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-musllinux_1_1_aarch64.whl",
+   "size": 2300478,
+   "upload_time": "2026-11-05T09:13:10"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-musllinux_1_1_armv7l.whl",
+   "size": 2474874,
+   "upload_time": "2026-11-05T09:13:12"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-musllinux_1_1_x86_64.whl",
+   "size": 2502771,
+   "upload_time": "2026-11-05T09:13:13"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+   "size": 1496509,
+   "upload_time": "2026-11-05T09:13:15"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-macosx_10_12_x86_64.whl",
+   "size": 2223917,
+   "upload_time": "2026-11-05T09:13:21"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-macosx_11_0_arm64.whl",
+   "size": 2087372,
+   "upload_time": "2026-11-05T09:13:23"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-manylinux1_i686.manylinux_2_5_i686.whl",
+   "size": 2275190,
+   "upload_time": "2026-11-05T09:13:24"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+   "size": 2110343,
+   "upload_time": "2026-11-05T09:13:26"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-manylinux2014_armv7l.manylinux_2_17_armv7l.whl",
+   "size": 2207887,
+   "upload_time": "2026-11-05T09:13:27"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 2404171,
+   "upload_time": "2026-11-05T09:13:29"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-manylinux2014_s390x.manylinux_2_17_s390x.whl",
+   "size": 2466049,
+   "upload_time": "2026-11-05T09:13:31"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 2262062,
+   "upload_time": "2026-11-05T09:13:33"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-manylinux_2_31_riscv64.whl",
+   "size": 2263713,
+   "upload_time": "2026-11-05T09:13:35"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-musllinux_1_1_aarch64.whl",
+   "size": 2305044,
+   "upload_time": "2026-11-05T09:13:37"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-musllinux_1_1_armv7l.whl",
+   "size": 2483506,
+   "upload_time": "2026-11-05T09:13:40"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-musllinux_1_1_x86_64.whl",
+   "size": 2512832,
+   "upload_time": "2026-11-05T09:13:43"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-win32.whl",
+   "size": 2101977,
+   "upload_time": "2026-11-05T09:13:45"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-win_amd64.whl",
+   "size": 2240461,
+   "upload_time": "2026-11-05T09:13:48"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314t-win_arm64.whl",
+   "size": 2168505,
+   "upload_time": "2026-11-05T09:13:50"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-win32.whl",
+   "size": 2122015,
+   "upload_time": "2026-11-05T09:13:17"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-win_amd64.whl",
+   "size": 2265109,
+   "upload_time": "2026-11-05T09:13:18"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp314-cp314-win_arm64.whl",
+   "size": 2165745,
+   "upload_time": "2026-11-05T09:13:20"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-macosx_10_12_x86_64.whl",
+   "size": 2241950,
+   "upload_time": "2026-11-05T09:13:53"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-macosx_11_0_arm64.whl",
+   "size": 2112412,
+   "upload_time": "2026-11-05T09:13:55"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-manylinux1_i686.manylinux_2_5_i686.whl",
+   "size": 2263220,
+   "upload_time": "2026-11-05T09:13:57"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+   "size": 2134716,
+   "upload_time": "2026-11-05T09:13:59"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-manylinux2014_armv7l.manylinux_2_17_armv7l.whl",
+   "size": 2201901,
+   "upload_time": "2026-11-05T09:14:01"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 2389670,
+   "upload_time": "2026-11-05T09:14:03"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-manylinux2014_s390x.manylinux_2_17_s390x.whl",
+   "size": 2468951,
+   "upload_time": "2026-11-05T09:14:05"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 2272957,
+   "upload_time": "2026-11-05T09:14:06"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-manylinux_2_31_riscv64.whl",
+   "size": 2275028,
+   "upload_time": "2026-11-05T09:14:08"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-musllinux_1_1_aarch64.whl",
+   "size": 2305447,
+   "upload_time": "2026-11-05T09:14:09"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-musllinux_1_1_armv7l.whl",
+   "size": 2477852,
+   "upload_time": "2026-11-05T09:14:11"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-musllinux_1_1_x86_64.whl",
+   "size": 2506352,
+   "upload_time": "2026-11-05T09:14:13"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-macosx_10_12_x86_64.whl",
+   "size": 2233053,
+   "upload_time": "2026-11-05T09:14:27"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-macosx_11_0_arm64.whl",
+   "size": 2090776,
+   "upload_time": "2026-11-05T09:14:30"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-manylinux1_i686.manylinux_2_5_i686.whl",
+   "size": 2272481,
+   "upload_time": "2026-11-05T09:14:32"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+   "size": 2113069,
+   "upload_time": "2026-11-05T09:14:34"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-manylinux2014_armv7l.manylinux_2_17_armv7l.whl",
+   "size": 2202754,
+   "upload_time": "2026-11-05T09:14:36"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 2411472,
+   "upload_time": "2026-11-05T09:14:38"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-manylinux2014_s390x.manylinux_2_17_s390x.whl",
+   "size": 2475330,
+   "upload_time": "2026-11-05T09:14:40"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 2265718,
+   "upload_time": "2026-11-05T09:14:42"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-manylinux_2_31_riscv64.whl",
+   "size": 2273454,
+   "upload_time": "2026-11-05T09:14:44"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-musllinux_1_1_aarch64.whl",
+   "size": 2314862,
+   "upload_time": "2026-11-05T09:14:45"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-musllinux_1_1_armv7l.whl",
+   "size": 2479073,
+   "upload_time": "2026-11-05T09:14:47"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-musllinux_1_1_x86_64.whl",
+   "size": 2521328,
+   "upload_time": "2026-11-05T09:14:49"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-win32.whl",
+   "size": 2107629,
+   "upload_time": "2026-11-05T09:14:50"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-win_amd64.whl",
+   "size": 2244906,
+   "upload_time": "2026-11-05T09:14:53"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315t-win_arm64.whl",
+   "size": 2179018,
+   "upload_time": "2026-11-05T09:14:54"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-win32.whl",
+   "size": 2127780,
+   "upload_time": "2026-11-05T09:14:17"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-win_amd64.whl",
+   "size": 2270596,
+   "upload_time": "2026-11-05T09:14:20"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-cp315-cp315-win_arm64.whl",
+   "size": 2170880,
+   "upload_time": "2026-11-05T09:14:24"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-graalpy312-graalpy250_312_native-macosx_10_12_x86_64.whl",
+   "size": 2212591,
+   "upload_time": "2026-11-05T09:14:56"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-graalpy312-graalpy250_312_native-macosx_11_0_arm64.whl",
+   "size": 2048167,
+   "upload_time": "2026-11-05T09:14:57"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-graalpy312-graalpy250_312_native-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+   "size": 2119548,
+   "upload_time": "2026-11-05T09:14:59"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-graalpy312-graalpy250_312_native-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 2279952,
+   "upload_time": "2026-11-05T09:15:00"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-graalpy313-graalpy253_313_native-macosx_11_0_arm64.whl",
+   "size": 2049324,
+   "upload_time": "2026-11-05T09:15:02"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-graalpy313-graalpy253_313_native-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+   "size": 2119802,
+   "upload_time": "2026-11-05T09:15:03"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-graalpy313-graalpy253_313_native-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 2280639,
+   "upload_time": "2026-11-05T09:15:05"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-pp311-pypy311_pp73-macosx_10_12_x86_64.whl",
+   "size": 2166960,
+   "upload_time": "2026-11-05T09:15:06"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-pp311-pypy311_pp73-macosx_11_0_arm64.whl",
+   "size": 2085636,
+   "upload_time": "2026-11-05T09:15:08"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-pp311-pypy311_pp73-manylinux1_i686.manylinux_2_5_i686.whl",
+   "size": 2284621,
+   "upload_time": "2026-11-05T09:15:09"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-pp311-pypy311_pp73-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 2277673,
+   "upload_time": "2026-11-05T09:15:11"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-pp311-pypy311_pp73-musllinux_1_1_aarch64.whl",
+   "size": 2297354,
+   "upload_time": "2026-11-05T09:15:12"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-pp311-pypy311_pp73-musllinux_1_1_armv7l.whl",
+   "size": 2469913,
+   "upload_time": "2026-11-05T09:15:14"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-pp311-pypy311_pp73-musllinux_1_1_x86_64.whl",
+   "size": 2503746,
+   "upload_time": "2026-11-05T09:15:15"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-pp311-pypy311_pp73-win_amd64.whl",
+   "size": 2333540,
+   "upload_time": "2026-11-05T09:15:17"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-pp311-pypy311_pp80-macosx_10_12_x86_64.whl",
+   "size": 2166962,
+   "upload_time": "2026-11-05T09:15:20"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-pp311-pypy311_pp80-macosx_11_0_arm64.whl",
+   "size": 2085634,
+   "upload_time": "2026-11-05T09:15:21"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-pp311-pypy311_pp80-manylinux_2_28_x86_64.whl",
+   "size": 2277804,
+   "upload_time": "2026-11-05T09:15:23"
+  },
+  {
+   "filename": "pydantic_core-2.50.4-pp311-pypy311_pp80-win_amd64.whl",
+   "size": 2333539,
+   "upload_time": "2026-11-05T09:15:25"
+  },
+  {
+   "filename": "pydantic_core-2.50.4.tar.gz",
+   "size": 522249,
+   "upload_time": "2026-11-05T09:15:26"
+  }
+ ]
+}

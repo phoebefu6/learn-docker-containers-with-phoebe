@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Session 5 of 6. Compose for a data team: one default network where service names are hostnames, published ports, depends_on with a Postgres healthcheck, volumes that keep the database, env files that keep the password out of the image, and a compose.yaml for the constructed Stackyard stack.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="Compose: notebook, API, database, one command - learn docker containers with phoebe">
+<meta property="og:description" content="Session 5 of 6. Service names, ports, healthchecks, volumes and env files, and a compose.yaml that starts a notebook, an API and Postgres with one command.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/courses/05-compose-one-command.html">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Compose: notebook, API, database, one command - learn docker containers with phoebe">
+<meta name="twitter:description" content="Session 5 of 6. Service names, healthchecks, volumes, env files, and one compose.yaml for the whole stack.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Session 5 · Compose, one command - learn docker containers with phoebe</title>
+<link rel="stylesheet" href="../assets/style.css?v=1">
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="wrap">
+    <span class="crumb"><a href="../index.html">learn-docker-containers-with-phoebe</a> / Session 5 of 6</span>
+    <button class="btn" id="toggle-all" type="button">Expand all</button>
+    <button class="btn primary" id="zoom-toggle" type="button">Projector zoom: off</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Learn Docker &amp; Containers with Phoebe · Session 5 of 6</div>
+    <h1>Compose: notebook, API, database, <span class="accent">one command</span></h1>
+    <p class="sub">Stackyard's API now has a fast, small image. It still cannot do anything on its own: it needs a database, the notebook needs both of them, and the password has to come from somewhere other than the image. Tonight we write the one file that says how the pieces run together, so that a teammate who has Docker and the repository can type <code>docker compose up</code> and get the notebook, the API and Postgres, talking to each other by name, with the data where it should be.</p>
+    <div class="chip-row">
+      <span class="chip level">🟠 Stretch</span>
+      <span class="chip audience">Data, analytics and ML people who ship notebooks, APIs and jobs</span>
+      <span class="chip audience">Builds on the session 4 Dockerfile</span>
+      <span class="chip time">45 min</span>
+    </div>
+    <div class="agenda">
+      <span class="a1" style="flex:1">0-3 · Welcome</span>
+      <span class="a2" style="flex:4">3-18 · Networks, startup order, where data lives</span>
+      <span class="a3" style="flex:5">18-40 · Build-along: compose.yaml for Stackyard</span>
+      <span class="a4" style="flex:1">40-45 · Q&amp;A</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="intro">
+    <div class="section-kicker">
+      <span class="klabel">Part 0</span>
+      <h2>Where we start</h2>
+    </div>
+    <p class="lede">Session 1's inventory left four lines pointing at "s5": the password in a shell profile, the data file under a home folder, Postgres on <code>localhost:5432</code>, and a job that runs at 02:00 in the laptop's time zone. None of those belongs inside an image. They belong in the description of how the images run: which containers exist, how they find each other, which ports the laptop can see, where the bytes that must survive are kept, and where the secret is read from. That description is Compose, and for the Constructed Stackyard example it is one file, <code>compose.yaml</code>, piece five of the container kit.</p>
+
+    <div class="legend">
+      <span class="pill">🎫 Clear all three quiz questions to stamp your passport</span>
+      <span class="pill">Live = presented in the 45 minutes</span>
+      <span class="pill">Self-study = the full depth, after class</span>
+      <span class="pill">★ Build-along = do it yourself, in the page</span>
+    </div>
+
+    <div class="callout win">
+      <p><strong>★ What you walk out with tonight.</strong> A complete <code>compose.yaml</code> for Stackyard's notebook, API, database and nightly job, a small Dockerfile for the notebook, a committed <code>.env.example</code>, and the three-line README section that turns "it runs on Ana's laptop" into "it runs on anyone's laptop that has Docker". You will also know the three Compose mistakes that cost data teams an afternoon each: <code>localhost</code> inside a container, "started" mistaken for "ready", and a database volume mounted one folder too high.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-1">
+    <div class="section-kicker">
+      <span class="klabel">Part 1 · covers services, the default network and ports</span>
+      <h2>Inside the stack, a service name is a hostname</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">Each entry under <code>services:</code> in a Compose file becomes one or more containers. Compose, in Docker's own words, "sets up a single default network for the app", joins every service to it, and lets each container reach the others by service name. That replaces the <code>localhost:5432</code> line from session 1's inventory with something that works on every machine. The figure is the Constructed Stackyard example's stack: which name resolves to which container, and which ports cross out to Ana's laptop.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The default network Compose sets up holds four services: notebook, api, db and job. Inside it, notebook reaches api at api:8000, api reaches the database at db:5432, notebook reaches the database at postgres://db:5432, and the job reaches db:5432. Outside, on Ana's laptop, three published ports cross the boundary: 8888:8888 to the notebook, 8000:8000 to the api, and 5433:5432 to the database, because Homebrew Postgres still holds 5432 on the laptop. The job publishes no port.">
+        <defs>
+          <filter id="s5aSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="51" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s5aHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s5aAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s5aH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s5aL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s5aS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s5aC { font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #0E1030; }
+          .s5aA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s5aN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s5aH" x="30" y="24">ONE DEFAULT NETWORK, FOUR SERVICES, THREE PUBLISHED PORTS</text>
+
+        <g filter="url(#s5aSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="40" width="820" height="230" rx="14" transform="rotate(-0.2 440 155)" fill="#EEF1FD"/>
+          <rect x="60" y="70" width="200" height="64" rx="10" transform="rotate(-0.8 160 102)" fill="#FFFFFF"/>
+          <rect x="340" y="70" width="200" height="64" rx="10" transform="rotate(0.6 440 102)" fill="#FFFFFF"/>
+          <rect x="620" y="70" width="200" height="64" rx="10" transform="rotate(-0.5 720 102)" fill="#FF9F5A"/>
+          <rect x="340" y="190" width="150" height="56" rx="10" transform="rotate(0.7 415 218)" fill="#FFFFFF"/>
+          <path d="M264 104 L336 104" marker-end="url(#s5aAr)"/>
+          <path d="M544 104 L616 104" marker-end="url(#s5aAr)"/>
+          <path d="M180 138 L180 166 L680 166 L680 140" marker-end="url(#s5aAr)"/>
+          <path d="M494 214 C 600 214, 740 214, 740 140" marker-end="url(#s5aAr)"/>
+          <rect x="30" y="300" width="820" height="60" rx="12" transform="rotate(0.2 440 330)" fill="#FFFFFF"/>
+          <path d="M110 298 L110 140" marker-end="url(#s5aAr)"/>
+          <path d="M520 298 L520 140" marker-end="url(#s5aAr)"/>
+          <path d="M790 298 L790 140" marker-end="url(#s5aAr)"/>
+        </g>
+
+        <text class="s5aA" x="50" y="60">THE DEFAULT NETWORK COMPOSE SETS UP</text>
+
+        <text class="s5aH" x="160" y="98" text-anchor="middle">notebook</text>
+        <text class="s5aS" x="160" y="118" text-anchor="middle">jupyterlab on 8888</text>
+        <text class="s5aH" x="440" y="98" text-anchor="middle">api</text>
+        <text class="s5aS" x="440" y="118" text-anchor="middle">FastAPI on 8000</text>
+        <text class="s5aH" x="720" y="98" text-anchor="middle">db</text>
+        <text class="s5aL" x="720" y="118" text-anchor="middle">postgres:16 on 5432</text>
+        <text class="s5aH" x="415" y="214" text-anchor="middle">job</text>
+        <text class="s5aS" x="415" y="232" text-anchor="middle">run on demand</text>
+
+        <text class="s5aC" x="300" y="94" text-anchor="middle">api:8000</text>
+        <text class="s5aC" x="580" y="94" text-anchor="middle">db:5432</text>
+        <text class="s5aC" x="190" y="186">postgres://db:5432</text>
+        <text class="s5aC" x="560" y="238">db:5432</text>
+
+        <text class="s5aC" x="118" y="290">8888:8888</text>
+        <text class="s5aC" x="528" y="290">8000:8000</text>
+        <text class="s5aC" x="720" y="290">5433:5432</text>
+
+        <text class="s5aL" x="50" y="324">Ana's laptop, the host: localhost:8888, localhost:8000, localhost:5433</text>
+        <text class="s5aS" x="50" y="344">Homebrew Postgres still holds 5432 here, so the db publishes on 5433 instead. The job publishes nothing.</text>
+
+        <text class="s5aN" x="30" y="384">Constructed Stackyard example. Inside the network, names; from the laptop, only published ports.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - containers find each other by service name on one network; the laptop sees only the ports you publish</figcaption>
+    </figure>
+
+    <details class="card" open>
+      <summary><span class="mode live">Live</span>Service names are hostnames<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>One network, created for you.</strong> When you run <code>docker compose up</code>, Compose creates one network for the project and attaches every service to it. You never wrote a network key, and you do not need one for a stack like Stackyard's. Inside that network, the service name is the address: the API connects to <code>db</code>, port <code>5432</code>, and the network resolves <code>db</code> to whichever container is currently running the db service.</p>
+        <p><strong>Two numbers per port, two audiences.</strong> A <code>ports</code> entry is <code>"HOST:CONTAINER"</code>. The right-hand number is the port the process listens on inside its container; the left-hand number is the port your laptop opens and forwards. Docker's networking page puts it plainly: "The HOST_PORT and CONTAINER_PORT serve different purposes." Containers talking to each other use the container port and the service name, and never touch the host port at all.</p>
+        <p><strong>Why Stackyard's db says <code>"5433:5432"</code>.</strong> Ana still has the Homebrew Postgres from session 1 listening on 5432 on her laptop. If the db service also asked for host port 5432, the two would collide. So the container keeps its normal 5432 on the inside, and the laptop reaches it on 5433. The API never notices: it talks to <code>db:5432</code> inside the network. Quote every port mapping as a string, the way the Compose reference writes them; YAML is free to read some unquoted colon-separated numbers as something other than text.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>localhost inside a container is the container<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The most common first Compose bug on a data team is a connection string copied from a laptop: <code>postgresql://postgres@localhost:5432/postgres</code>. On the laptop, <code>localhost</code> was the laptop, and Postgres was on it. Inside the api container, <code>localhost</code> is the api container itself, and there is no Postgres in it. The connection is refused, and the error message rarely says "wrong host".</p>
+        <p>The rule that follows: inside the stack, address other services by service name and container port (<code>db:5432</code>); from your laptop, for a SQL client or a notebook you run outside Docker, use <code>localhost</code> and the published host port (<code>localhost:5433</code>). Keep the host part of the connection string in configuration, never in code, so the same code runs in both places. If you have Docker, <code>docker compose exec api env</code> prints the variables the api actually received; read the <code>DATABASE_URL</code> line and check the host is <code>db</code>. Your output will differ.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>Docker's own example is a web app and a database.</strong> The Compose networking page walks through a two-service app, <code>web</code> and <code>db</code>, where the web container connects to the database at <code>postgres://db:5432</code>, while a client on the host reaches the very same database through the published host port instead. It is the same split Stackyard needs: one address for containers, one for the laptop, and Compose sets up "a single default network for the app" so the first one works without a line of network configuration.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-2">
+    <div class="section-kicker">
+      <span class="klabel">Part 2 · covers depends_on and healthchecks</span>
+      <h2>Started is not the same as ready</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">The API needs the database before its first query. Compose's <code>depends_on</code> looks like the answer, and in its short form it is half of one: it controls the order containers are created in, not whether the thing inside is ready to answer. Postgres takes a while to initialise after its container starts, especially on a first run with an empty volume. The figure shows both versions of the Constructed Stackyard example's startup, as order only: the positions t0 to t4 are not seconds, because nothing here was timed.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 316" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two startup timelines with positions t0 to t4, not seconds. Left, short syntax depends_on db: the db container starts at t0 and is initialising until t3; no healthcheck is consulted; the api starts at t1 and its first query at t2 fails because Postgres is still initialising. Right, condition service_healthy: the db container starts at t0 and initialises until t3; the healthcheck runs pg_isready at t1 and t2, which do not exit 0, and at t3, which exits 0; the api waits until then, starts at t3 and its first query succeeds.">
+        <defs>
+          <filter id="s5bSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="53" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s5bHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s5bAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s5bH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s5bL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s5bS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s5bC { font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #0E1030; }
+          .s5bA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s5bW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s5bR { font: 800 11px Inter, sans-serif; fill: #991B1B; }
+          .s5bN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s5bH" x="30" y="28">SHORT SYNTAX: depends_on: [db]</text>
+        <text class="s5bH" x="450" y="28">LONG SYNTAX: condition: service_healthy</text>
+
+        <g filter="url(#s5bSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="44" width="400" height="196" rx="12" transform="rotate(-0.3 230 142)" fill="#FFFFFF"/>
+          <rect x="450" y="44" width="400" height="196" rx="12" transform="rotate(0.3 650 142)" fill="#FFFFFF"/>
+
+          <rect x="110" y="62" width="210" height="28" rx="6" fill="#EEF1FD"/>
+          <rect x="320" y="62" width="90" height="28" rx="6" fill="#01005E"/>
+          <rect x="180" y="142" width="70" height="28" rx="6" fill="#FFFFFF"/>
+          <rect x="250" y="142" width="160" height="28" rx="6" fill="#FEF2F2"/>
+          <path d="M110 196 L410 196"/>
+
+          <rect x="530" y="62" width="210" height="28" rx="6" fill="#EEF1FD"/>
+          <rect x="740" y="62" width="90" height="28" rx="6" fill="#01005E"/>
+          <rect x="572" y="102" width="56" height="28" rx="6" fill="#FFFFFF"/>
+          <rect x="642" y="102" width="56" height="28" rx="6" fill="#FFFFFF"/>
+          <rect x="712" y="102" width="56" height="28" rx="6" fill="#FF9F5A"/>
+          <rect x="530" y="142" width="210" height="28" rx="6" fill="url(#s5bHc)"/>
+          <rect x="740" y="142" width="90" height="28" rx="6" fill="#FF9F5A"/>
+          <path d="M530 196 L830 196"/>
+        </g>
+
+        <text class="s5bL" x="44" y="81">db</text>
+        <text class="s5bL" x="44" y="121">check</text>
+        <text class="s5bL" x="44" y="161">api</text>
+        <text class="s5bL" x="464" y="81">db</text>
+        <text class="s5bL" x="464" y="121">check</text>
+        <text class="s5bL" x="464" y="161">api</text>
+
+        <text class="s5bL" x="215" y="81" text-anchor="middle">initialising</text>
+        <text class="s5bW" x="365" y="81" text-anchor="middle">ready</text>
+        <text class="s5bS" x="110" y="121">no healthcheck consulted</text>
+        <text class="s5bL" x="215" y="161" text-anchor="middle">starts</text>
+        <text class="s5bR" x="330" y="160" text-anchor="middle">first query fails</text>
+
+        <text class="s5bL" x="635" y="81" text-anchor="middle">initialising</text>
+        <text class="s5bW" x="785" y="81" text-anchor="middle">ready</text>
+        <text class="s5bC" x="600" y="120" text-anchor="middle">not 0</text>
+        <text class="s5bC" x="670" y="120" text-anchor="middle">not 0</text>
+        <text class="s5bC" x="740" y="120" text-anchor="middle">exit 0</text>
+        <text class="s5bL" x="635" y="161" text-anchor="middle">waiting for healthy</text>
+        <text class="s5bL" x="785" y="161" text-anchor="middle">query ok</text>
+
+        <text class="s5bA" x="110" y="214" text-anchor="middle">t0</text>
+        <text class="s5bA" x="180" y="214" text-anchor="middle">t1</text>
+        <text class="s5bA" x="250" y="214" text-anchor="middle">t2</text>
+        <text class="s5bA" x="320" y="214" text-anchor="middle">t3</text>
+        <text class="s5bA" x="400" y="214" text-anchor="middle">t4</text>
+        <text class="s5bA" x="530" y="214" text-anchor="middle">t0</text>
+        <text class="s5bA" x="600" y="214" text-anchor="middle">t1</text>
+        <text class="s5bA" x="670" y="214" text-anchor="middle">t2</text>
+        <text class="s5bA" x="740" y="214" text-anchor="middle">t3</text>
+        <text class="s5bA" x="820" y="214" text-anchor="middle">t4</text>
+
+        <text class="s5bR" x="30" y="264">api's first query fails while Postgres initialises</text>
+        <text class="s5bL" x="450" y="264">api is started only after pg_isready exits 0</text>
+
+        <text class="s5bN" x="30" y="296">Constructed Stackyard example. t0 to t4 show order, not seconds: nothing in this figure was measured.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - short depends_on orders the starts; service_healthy waits for the database to answer</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Started is not ready<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>The short form orders, it does not wait.</strong> <code>depends_on: [db]</code> tells Compose to create and start db before api. The Compose services reference is explicit that this is all it does: "Compose does not wait for dependency services to be "healthy"". A Postgres container that has started is a process that is still preparing its data directory; for a while, it refuses connections. An API that queries at startup, or a notebook cell run straight away, hits that window.</p>
+        <p><strong>The long form waits for a condition.</strong> Write <code>depends_on</code> as a map and give each dependency a <code>condition</code>. There are three: <code>service_started</code> (the short form's behaviour, spelled out), <code>service_healthy</code> (wait until the dependency's healthcheck passes) and <code>service_completed_successfully</code> (wait until the dependency has run and exited cleanly).</p>
+        <p><strong>A healthcheck is a command that answers "ready?".</strong> A <code>healthcheck</code> has a <code>test</code> (the command), an <code>interval</code> (how often to run it), a <code>timeout</code> (how long one run may take), <code>retries</code> (how many consecutive failures mark it unhealthy) and a <code>start_period</code> (a grace period while the service boots). For Postgres the command already exists: <code>pg_isready</code>, which the PostgreSQL 16 documentation describes as "a utility for checking the connection status of a PostgreSQL database server", where "The exit status specifies the result of the connection check." It ships inside the postgres image, so the healthcheck is one line: <code>test: ["CMD-SHELL", "pg_isready -U postgres"]</code>. Exit status 0 means accepting connections, and that is what <code>service_healthy</code> waits for.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>service_completed_successfully for one-off jobs<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The third condition is for services that are meant to finish. The classic case on a data team is a migration step: create the tables, load the reference rows, exit. Give it its own service, say <code>migrate</code>, built from the API image with a different command, and make the API depend on it with <code>condition: service_completed_successfully</code>. The API then starts only after the migration has run and exited with status 0; if the migration fails, the API does not start against a half-built schema.</p>
+        <div class="prompt-box good"><span class="label">★ A migrate step the API waits for (constructed)</span>  migrate:
+    build: .
+    command: ["python", "-m", "app.migrate"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://postgres@db:5432/postgres
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    # ...as in the build-along, plus:
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully</div>
+        <p>Chains like this read top to bottom as a contract: database healthy, then schema in place, then API. <code>app/migrate.py</code> is constructed for the example; Stackyard's kit does not need one yet. If you have Docker, <code>docker compose ps</code> shows each service's state, including health, while the stack comes up; your output will differ.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>The reference says it in one line.</strong> Docker's Compose file reference, in the services section on <code>depends_on</code>, notes that with the short syntax "Compose does not wait for dependency services to be "healthy"" and points to the long syntax for that. The same reference lists the three conditions and the five healthcheck fields used above. Nothing about Postgres is special here: any dependency that needs time between "process started" and "ready to answer" wants a healthcheck and <code>service_healthy</code>.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-3">
+    <div class="section-kicker">
+      <span class="klabel">Part 3 · covers volumes and env files</span>
+      <h2>Where the bytes live when the container goes away</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">Session 2 showed that a container is its image's read-only layers plus one writable layer, and that the writable layer belongs to that container. Remove the container and the writable layer goes with it. For the API that is fine: it writes nothing worth keeping. For Postgres it is everything. The figure shows the four places bytes can live in the Constructed Stackyard example's stack, and which of them survive a re-create.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 392" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="An env file on the host, .env, kept out of Git, is read at container start by env_file for both the db and the api container, and never enters an image layer. Each container has read-only image layers and a writable layer that is gone when the container is removed. The db container mounts /var/lib/postgresql/data from the named volume pgdata, which is kept across removal and re-creation. The api container mounts /data from the host folder ./data, read-only, which holds the parquet file.">
+        <defs>
+          <filter id="s5cSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="57" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s5cHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s5cAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s5cH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s5cL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s5cS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s5cC { font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #0E1030; }
+          .s5cA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s5cR { font: 800 12px Inter, sans-serif; fill: #991B1B; }
+          .s5cN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s5cH" x="30" y="24">FOUR PLACES BYTES LIVE, AND WHAT SURVIVES docker compose down</text>
+
+        <g filter="url(#s5cSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="310" y="40" width="260" height="46" rx="10" transform="rotate(-0.6 440 63)" fill="#FFFFFF"/>
+          <path d="M306 62 C 200 62, 200 84, 200 106" marker-end="url(#s5cAr)"/>
+          <path d="M574 62 C 680 62, 680 84, 680 106" marker-end="url(#s5cAr)"/>
+
+          <rect x="40" y="110" width="380" height="152" rx="12" transform="rotate(-0.3 230 186)" fill="#FFFFFF"/>
+          <rect x="460" y="110" width="380" height="152" rx="12" transform="rotate(0.3 650 186)" fill="#FFFFFF"/>
+          <rect x="60" y="142" width="340" height="28" rx="6" fill="url(#s5cHc)"/>
+          <rect x="60" y="180" width="340" height="28" rx="6" fill="#FEF2F2"/>
+          <rect x="60" y="218" width="340" height="28" rx="6" fill="#EEF1FD"/>
+          <rect x="480" y="142" width="340" height="28" rx="6" fill="url(#s5cHc)"/>
+          <rect x="480" y="180" width="340" height="28" rx="6" fill="#FEF2F2"/>
+          <rect x="480" y="218" width="340" height="28" rx="6" fill="#EEF1FD"/>
+
+          <rect x="60" y="300" width="340" height="50" rx="10" transform="rotate(-0.7 230 325)" fill="#FF9F5A"/>
+          <rect x="480" y="300" width="340" height="50" rx="10" transform="rotate(0.6 650 325)" fill="#FFFFFF"/>
+          <path d="M230 296 L230 250" marker-end="url(#s5cAr)"/>
+          <path d="M650 296 L650 250" marker-end="url(#s5cAr)"/>
+        </g>
+
+        <text class="s5cC" x="440" y="60" text-anchor="middle">.env on the host, not in Git</text>
+        <text class="s5cS" x="440" y="76" text-anchor="middle">read at start, never in an image layer</text>
+
+        <text class="s5cH" x="60" y="132">db container</text>
+        <text class="s5cH" x="480" y="132">api container</text>
+
+        <text class="s5cL" x="74" y="161">image layers: read-only</text>
+        <text class="s5cR" x="74" y="199">writable layer: gone on rm</text>
+        <text class="s5cC" x="74" y="237">/var/lib/postgresql/data</text>
+        <text class="s5cL" x="494" y="161">image layers: read-only</text>
+        <text class="s5cR" x="494" y="199">writable layer: gone on rm</text>
+        <text class="s5cC" x="494" y="237">/data (read-only)</text>
+
+        <text class="s5cA" x="40" y="284">ON THE HOST</text>
+        <text class="s5cS" x="240" y="280">named volume mount</text>
+        <text class="s5cS" x="660" y="280">bind mount, :ro</text>
+
+        <text class="s5cH" x="230" y="322" text-anchor="middle">named volume pgdata</text>
+        <text class="s5cL" x="230" y="340" text-anchor="middle">kept across rm and re-create</text>
+        <text class="s5cH" x="650" y="322" text-anchor="middle">./data, a host folder</text>
+        <text class="s5cS" x="650" y="340" text-anchor="middle">scores_2025.parquet, read-only inside</text>
+
+        <text class="s5cN" x="30" y="374">Constructed Stackyard example. Database bytes survive only in pgdata; .env is read at start, never built in.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - the writable layer is temporary by design, so anything worth keeping is mounted from outside the container</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Three places data can live<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>The writable layer: scratch space.</strong> Anything a container writes outside a mount lands in its writable layer. Remove the container and it is gone. Re-creating a container, which Compose does whenever its configuration or image changes, counts as removing it.</p>
+        <p><strong>A named volume: storage Docker manages.</strong> Declare <code>pgdata</code> under the top-level <code>volumes:</code> key and mount it into db. Docker keeps it outside any container's lifecycle, so the database survives <code>docker compose down</code> and <code>up</code>. The mount point matters. The postgres image documentation says that for PostgreSQL 17 and below the volume goes at <code>/var/lib/postgresql/data</code>, not one folder higher at <code>/var/lib/postgresql</code>; mount it in the wrong place and the image creates an anonymous volume of its own, and the data does not persist when the container is re-created. Stackyard runs <code>postgres:16</code>, so the path is <code>/var/lib/postgresql/data</code>. From version 18 the path became version specific, so read the README again before you change the tag.</p>
+        <p><strong>A bind mount: a host folder, shown inside.</strong> <code>./data:/data:ro</code> makes the repository's <code>data/</code> folder appear at <code>/data</code> inside the container, read-only. That is where session 1's fix pays off: <code>scoring.py</code> reads its path from <code>STACKYARD_DATA</code>, so Compose sets <code>STACKYARD_DATA=/data</code> and the 118 MB parquet file never goes near an image, which is exactly why the session 3 <code>.dockerignore</code> keeps <code>data/</code> out of the build context.</p>
+        <p><strong>And the env file: configuration, read at start.</strong> <code>env_file: .env</code> tells Compose to read variables from <code>.env</code> and hand them to the container when it starts. They are in the running container's environment, never in an image layer. <code>.env</code> stays out of Git (it is in <code>.gitignore</code>) and out of the build context (it is in <code>.dockerignore</code>). Remember why: in the session 4 lab, the naive Dockerfile's <code>COPY . .</code> put <code>.env</code> inside the image, where anyone who can pull the image can read it.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>env_file vs environment precedence, and secrets as files<span class="mini">4 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>Precedence.</strong> A service can have both <code>env_file</code> and <code>environment</code>. The Compose reference says values from <code>env_file</code> are overridden by <code>environment</code>. A practical split: <code>.env</code> holds values that differ per person or per machine and must not be committed (the password); <code>environment</code> in <code>compose.yaml</code> holds values that are the same for everyone and belong in review (<code>STACKYARD_DATA: /data</code>, the database host <code>db</code>, <code>TZ: UTC</code>). If the same name appears in both, the <code>compose.yaml</code> value wins, which is usually what you want for anything structural.</p>
+        <p><strong>The only variable Postgres requires.</strong> The postgres image README is short on this: "The only variable required is POSTGRES_PASSWORD". <code>POSTGRES_USER</code> is optional and defaults to <code>postgres</code>. Session 1's inventory called Stackyard's secret <code>DB_PASSWORD</code>; in the kit it is renamed <code>POSTGRES_PASSWORD</code>, so one line in <code>.env</code> serves the database (which requires that name) and the API (whose constructed connection code reads the same name).</p>
+        <p><strong>Secrets as files.</strong> An environment variable can show up in places you did not intend: a debug dump of the environment, a crash report, <code>docker inspect</code>. The postgres image offers a file-based alternative: append <code>_FILE</code> to the variable name, as in <code>POSTGRES_PASSWORD_FILE=/run/secrets/postgres-passwd</code>, and the image reads the value from that file instead, which is how it takes a Docker secret. For a laptop stack, an env file kept out of Git is the reasonable floor; for anything shared, prefer the file. Secrets for AI agents and tools are a topic of their own: <a href="https://phoebefu6.github.io/learn-agent-secrets-access-with-phoebe/courses/04-keep-the-key-out.html">Agent Secrets, session 4</a>.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>One folder too high, and the database resets.</strong> The official postgres image README warns that for PostgreSQL 17 and below the data volume must be mounted at <code>/var/lib/postgresql/data</code> rather than <code>/var/lib/postgresql</code>; otherwise an anonymous volume is created and the data does not persist when the container is re-created. It is the kind of mistake that looks fine for days: the stack runs, the tables fill, and then a routine <code>docker compose up</code> after an image update brings back an empty database.</p>
+    </div>
+  </section>
+
+  <section class="section" id="demo-1">
+    <div class="section-kicker">
+      <span class="klabel">Build-along</span>
+      <h2>compose.yaml for Stackyard</h2>
+      <span class="tag demo">★ 22 min · everyone builds</span>
+    </div>
+    <p class="lede">Constructed Stackyard example: you will write Stackyard's <code>compose.yaml</code> one service at a time, starting from the database because everything else depends on it. The API is built from the session 4 Dockerfile (rung 6, non-root and lint clean), already at the root of the repository. Write each step yourself in your editor or on paper first, then compare with the box. Nothing on this page was run or timed; if you later run it on your own machine with Docker, your output will differ.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="compose.yaml's two top-level keys mapped to the running stack. Under services, the notebook, api and db keys each become a running container, published on 8888, 8000 and 5433 on the host. The job key, in the jobs profile, becomes a container only when run with docker compose run. Under volumes, the pgdata key becomes a named volume that outlives the containers. The default network has no key: Compose creates it.">
+        <defs>
+          <filter id="s5dSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="59" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s5dHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s5dAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s5dH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s5dL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s5dS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s5dC { font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #0E1030; }
+          .s5dA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s5dW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s5dN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s5dA" x="40" y="32">compose.yaml, THE FILE</text>
+        <text class="s5dA" x="540" y="32">WHAT docker compose up GIVES YOU</text>
+
+        <g filter="url(#s5dSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="40" y="44" width="300" height="278" rx="12" transform="rotate(-0.4 190 183)" fill="#EEF1FD"/>
+          <rect x="540" y="84" width="300" height="28" rx="6" transform="rotate(0.5 690 98)" fill="#01005E"/>
+          <rect x="540" y="124" width="300" height="28" rx="6" transform="rotate(-0.4 690 138)" fill="#01005E"/>
+          <rect x="540" y="164" width="300" height="28" rx="6" transform="rotate(0.4 690 178)" fill="#01005E"/>
+          <rect x="540" y="204" width="300" height="28" rx="6" transform="rotate(-0.5 690 218)" fill="#FFFFFF"/>
+          <rect x="540" y="246" width="300" height="28" rx="6" transform="rotate(0.3 690 260)" fill="url(#s5dHc)"/>
+          <rect x="540" y="284" width="300" height="28" rx="6" transform="rotate(-0.4 690 298)" fill="#FF9F5A"/>
+          <path d="M344 98 L536 98" marker-end="url(#s5dAr)"/>
+          <path d="M344 138 L536 138" marker-end="url(#s5dAr)"/>
+          <path d="M344 178 L536 178" marker-end="url(#s5dAr)"/>
+          <path d="M344 218 L536 218" marker-end="url(#s5dAr)"/>
+          <path d="M344 298 L536 298" marker-end="url(#s5dAr)"/>
+        </g>
+
+        <text class="s5dC" x="60" y="74">services:</text>
+        <text class="s5dC" x="84" y="102">notebook:</text>
+        <text class="s5dC" x="84" y="142">api:</text>
+        <text class="s5dC" x="84" y="182">db:</text>
+        <text class="s5dC" x="84" y="222">job:</text>
+        <text class="s5dS" x="84" y="240">profiles: [jobs]</text>
+        <text class="s5dC" x="60" y="276">volumes:</text>
+        <text class="s5dC" x="84" y="302">pgdata:</text>
+
+        <text class="s5dW" x="556" y="102">notebook container, host 8888</text>
+        <text class="s5dW" x="556" y="142">api container, host 8000</text>
+        <text class="s5dW" x="556" y="182">db container, host 5433</text>
+        <text class="s5dL" x="556" y="222">job: only on compose run</text>
+        <text class="s5dL" x="556" y="264">default network, created for you</text>
+        <text class="s5dL" x="556" y="302">volume pgdata, outlives containers</text>
+
+        <text class="s5dN" x="30" y="344">Constructed Stackyard example. Two top-level keys describe the whole stack; the network needs none.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - every key in the file becomes one running thing, and the one thing with no key is the network</figcaption>
+    </figure>
+
+    <div class="steps">
+      <div class="step">
+        <p><strong>The database first.</strong> Use the official image at the major version Ana already runs, read the password from the env file, keep the data in a named volume at the documented path, add the <code>pg_isready</code> healthcheck, and publish on host port 5433 so it does not clash with the Homebrew Postgres still on 5432. The healthcheck intervals are settings you choose, not measurements; tune them on your own machine.</p>
+        <div class="prompt-box good"><span class="label">★ Step 1 · the db service</span>services:
+  db:
+    image: postgres:16
+    env_file: .env                      # POSTGRES_PASSWORD lives here
+    volumes:
+      - pgdata:/var/lib/postgresql/data # the documented path for 17 and below
+    ports:
+      - "5433:5432"                     # host 5433, container 5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s                      # chosen settings, not measured
+      timeout: 3s
+      retries: 10
+      start_period: 10s</div>
+      </div>
+      <div class="step">
+        <p><strong>The API, waiting for a healthy database.</strong> Build from the repository root, where the session 4 Dockerfile sits. Structural values go in <code>environment</code>: the data path from session 1's fix, and a connection string whose host is <code>db</code>, not <code>localhost</code>. The password is not in the string; Stackyard's connection code (constructed) reads it from <code>POSTGRES_PASSWORD</code>, which arrives through <code>env_file</code>. The data folder is mounted read-only.</p>
+        <div class="prompt-box good"><span class="label">★ Step 2 · the api service</span>  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      STACKYARD_DATA: /data
+      DATABASE_URL: postgresql://postgres@db:5432/postgres
+    volumes:
+      - ./data:/data:ro
+    depends_on:
+      db:
+        condition: service_healthy</div>
+      </div>
+      <div class="step">
+        <p><strong>The notebook, with its own small Dockerfile.</strong> The notebook needs JupyterLab on top of the same packages as the API, so it gets its own image: <code>notebook/Dockerfile</code>, using the repository root as its build context so it can copy the pinned <code>requirements.txt</code>. jupyterlab 4.6.6 is the current PyPI release at the time of writing. It runs as a non-root user, like the API. The session 3 <code>.dockerignore</code> keeps <code>notebooks/</code> out of the build context, so the notebooks arrive as a bind mount instead, and every save lands straight back in the repository.</p>
+        <div class="prompt-box good"><span class="label">★ Step 3a · notebook/Dockerfile</span># notebook/Dockerfile; build context: the repository root
+FROM python:3.12-slim
+RUN useradd --create-home --uid 10001 stackyard
+WORKDIR /home/stackyard
+COPY requirements.txt .
+RUN pip install --no-cache-dir jupyterlab==4.6.6 -r requirements.txt
+USER stackyard
+EXPOSE 8888
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser"]</div>
+        <div class="prompt-box good"><span class="label">★ Step 3b · the notebook service</span>  notebook:
+    build:
+      context: .
+      dockerfile: notebook/Dockerfile
+    ports:
+      - "8888:8888"
+    env_file: .env
+    environment:
+      STACKYARD_DATA: /data
+      DATABASE_URL: postgresql://postgres@db:5432/postgres
+    volumes:
+      - ./data:/data:ro
+      - ./notebooks:/home/stackyard/notebooks
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started</div>
+      </div>
+      <div class="step">
+        <p><strong>The nightly job, honestly.</strong> The job uses the API image with a different command. The session 4 image copies only <code>app/</code>, so the job's script is mounted read-only from <code>jobs/</code>. <code>TZ: UTC</code> is set explicitly, so "nightly" no longer means "whatever zone the laptop is in". A <code>profiles</code> entry keeps it out of a plain <code>docker compose up</code>; you run it once, on demand, with <code>docker compose run --rm job</code>. And the honest part: Compose has no scheduler. Nothing in a Compose file says "at 02:00". The trigger moves to a scheduler outside Compose, such as cron on a shared server or a scheduled CI pipeline, and away from Ana's laptop for good.</p>
+        <div class="prompt-box good"><span class="label">★ Step 4 · the job service, and who triggers it</span>  job:
+    build: .
+    profiles: ["jobs"]                  # not started by a plain "up"
+    command: ["python", "jobs/nightly_scores.py"]
+    env_file: .env
+    environment:
+      STACKYARD_DATA: /data
+      DATABASE_URL: postgresql://postgres@db:5432/postgres
+      TZ: UTC                           # the job's clock, written down
+    volumes:
+      - ./data:/data:ro
+      - ./jobs:/app/jobs:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+# the trigger lives outside Compose, e.g. a shared server's crontab
+# (that server's own time zone is written down in the README):
+# 0 2 * * * cd /srv/stackyard &amp;&amp; docker compose run --rm job</div>
+      </div>
+      <div class="step">
+        <p><strong>The env file: commit the names, never the values.</strong> Commit <code>.env.example</code> with every variable name and a placeholder. Add <code>.env</code> to <code>.gitignore</code>. The session 3 <code>.dockerignore</code> already lists <code>.env</code>, so it cannot reach an image through the build context either.</p>
+        <div class="prompt-box good"><span class="label">★ Step 5 · .env.example (committed) and .gitignore</span># .env.example: copy to .env and fill in. Never commit .env.
+POSTGRES_PASSWORD=change-me
+
+# .gitignore
+.env</div>
+      </div>
+      <div class="step">
+        <p><strong>The README run section.</strong> Three commands a teammate can follow with nothing but Docker and the repository. This is the "one command" from session 1, plus the one-time setup it honestly needs.</p>
+        <div class="prompt-box good"><span class="label">★ Step 6 · README.md, "Run Stackyard"</span>## Run Stackyard
+
+cp .env.example .env          # then set POSTGRES_PASSWORD in .env
+docker compose up             # notebook on :8888, api on :8000, db on :5433
+
+# the nightly job, once, on demand:
+docker compose run --rm job</div>
+      </div>
+      <div class="step">
+        <p><strong>Put it together.</strong> Here is the whole file, piece five of Stackyard's container kit. Read it top to bottom and check every line against the figure above: four services, one named volume, and no network key, because the default network is all this stack needs.</p>
+        <div class="prompt-box good"><span class="label">★ Step 7 · compose.yaml, complete</span># compose.yaml - Stackyard (constructed example)
+services:
+  db:
+    image: postgres:16
+    env_file: .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      STACKYARD_DATA: /data
+      DATABASE_URL: postgresql://postgres@db:5432/postgres
+    volumes:
+      - ./data:/data:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  notebook:
+    build:
+      context: .
+      dockerfile: notebook/Dockerfile
+    ports:
+      - "8888:8888"
+    env_file: .env
+    environment:
+      STACKYARD_DATA: /data
+      DATABASE_URL: postgresql://postgres@db:5432/postgres
+    volumes:
+      - ./data:/data:ro
+      - ./notebooks:/home/stackyard/notebooks
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+  job:
+    build: .
+    profiles: ["jobs"]
+    command: ["python", "jobs/nightly_scores.py"]
+    env_file: .env
+    environment:
+      STACKYARD_DATA: /data
+      DATABASE_URL: postgresql://postgres@db:5432/postgres
+      TZ: UTC
+    volumes:
+      - ./data:/data:ro
+      - ./jobs:/app/jobs:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:</div>
+      </div>
+      <div class="step">
+        <p><strong>Score it, then save it.</strong> Grade the file on the six rows below. Save it as <code>compose.yaml</code> at the repository root, with <code>notebook/Dockerfile</code>, <code>.env.example</code> and the README section beside it. Session 6 shrinks and hardens the images this file builds, and scores the whole kit.</p>
+      </div>
+    </div>
+
+    <div class="scorecard" data-msgs="Every row solid. This piece of the kit is ready for the next one.|Strong. Take the weakest row into the next session and fix that one thing.|Halfway is exactly where this should be. Pick the two lowest rows and only those.|Mostly not yet, which is fine this early. Fix the lowest row before the next session." data-title="compose.yaml: six rows" data-foot="A row at 0 is a teammate's first afternoon with the stack, spent on a problem the file could have prevented.">
+      <div class="sc-row"><div class="sc-q">Services reach each other by service name, never localhost
+        <em>Every connection string inside the stack says db, api or another service name.</em></div></div>
+      <div class="sc-row"><div class="sc-q">Every published port is a quoted "HOST:CONTAINER" string that cannot clash on the laptop
+        <em>Here, 5433 on the host because 5432 is already taken.</em></div></div>
+      <div class="sc-row"><div class="sc-q">Anything that queries the database waits for service_healthy
+        <em>Short depends_on alone scores 0: started is not ready.</em></div></div>
+      <div class="sc-row"><div class="sc-q">The database lives in a named volume at the documented path
+        <em>For postgres:16, /var/lib/postgresql/data, or the data does not survive a re-create.</em></div></div>
+      <div class="sc-row"><div class="sc-q">Secrets come from .env, which is in .gitignore and .dockerignore, with a committed .env.example
+        <em>Names committed, values never. No password in compose.yaml or in an image.</em></div></div>
+      <div class="sc-row"><div class="sc-q">The nightly job has an explicit TZ and a trigger that is not anyone's laptop
+        <em>Compose runs it; a scheduler outside Compose decides when.</em></div></div>
+    </div>
+
+    <div class="callout tip">
+      <p><strong>Compose is for the laptop and the shared dev box, written to be honest.</strong> The file above is a development stack: it publishes a database port, mounts source folders, and reads a password from a local file. Running containers in production, on a platform with real secret storage, health-based restarts and deploys, is a different job, taught in <a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/courses/b8-full-cd-capstone.html">DataOps, builder session 8</a>. What carries over is the habit: every dependency named, every port chosen, every byte that matters stored somewhere you picked on purpose.</p>
+    </div>
+  </section>
+
+  <section class="section" id="exercise">
+    <div class="section-kicker">
+      <span class="klabel">Homework</span>
+      <h2>Before session 6</h2>
+      <span class="tag exercise">30 min</span>
+    </div>
+    <ol>
+      <li><strong>Draw your own stack.</strong> Take a project of yours with more than one moving part (a notebook and a database counts). Draw it the way the Part 1 figure draws Stackyard's: services in one box, the name each one uses to reach the others, and the ports the laptop needs. Circle every <code>localhost</code> in its configuration that would break inside a container.</li>
+      <li><strong>Write its healthchecks.</strong> For every service something else depends on, write the one command that answers "ready?" and the <code>depends_on</code> condition that should wait for it. If a service has no such command, write down how you would know it is ready.</li>
+      <li><strong>Find every byte worth keeping.</strong> List where your project writes data that must survive a restart. For each, decide: named volume, bind mount, or nothing (scratch). For any database image you use, look up the documented data path in its README and check it against your mount.</li>
+      <li><strong>Split names from values.</strong> Write the <code>.env.example</code> for your project: every variable name, a placeholder value, and a comment saying which ones are secrets. Then check that <code>.env</code> is in both <code>.gitignore</code> and <code>.dockerignore</code>. If you have Docker, run <code>docker compose config</code> on your file and read how Compose resolved it; your output will differ.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="quiz">
+    <div class="section-kicker">
+      <span class="klabel">Check yourself</span>
+      <h2>Three questions</h2>
+    </div>
+    <p>Clear all three and session 5 gets stamped in your passport.</p>
+
+    <div class="quiz-q" data-answer="2">
+      <p class="qtext">1 · Stackyard's api container is configured with <code>DATABASE_URL=postgresql://postgres@localhost:5432/postgres</code> and its first query is refused. Why?</p>
+      <button class="qopt" type="button">A · Port 5432 is reserved and cannot be used inside containers</button>
+      <button class="qopt" type="button">B · Compose only allows one service to use Postgres</button>
+      <button class="qopt" type="button">C · Inside the api container, localhost is the api container itself, which has no Postgres in it; on the default network the database is reached by its service name, db:5432</button>
+      <button class="qopt" type="button">D · The connection string must use the published host port 5433</button>
+      <p class="qwhy">Compose puts every service on one default network where the service name is the hostname. localhost always means "this container". The host port 5433 is for Ana's laptop, outside the network; containers use the service name and the container port.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="0">
+      <p class="qtext">2 · The api has <code>depends_on: [db]</code> in short syntax. What does that not guarantee?</p>
+      <button class="qopt" type="button">A · That Postgres is ready to accept connections when the api starts; it orders the starts, but "Compose does not wait for dependency services to be "healthy""</button>
+      <button class="qopt" type="button">B · That the db container is created before the api container</button>
+      <button class="qopt" type="button">C · That both services are on the same network</button>
+      <button class="qopt" type="button">D · That the db service exists in the file</button>
+      <p class="qwhy">Short syntax gives you start order only. To wait for readiness, give db a healthcheck (pg_isready) and write depends_on in long syntax with condition: service_healthy.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="3">
+      <p class="qtext">3 · Where must Stackyard's named volume be mounted in the <code>postgres:16</code> container, and why?</p>
+      <button class="qopt" type="button">A · At /var/lib/postgresql, because one level higher captures more</button>
+      <button class="qopt" type="button">B · Anywhere; Postgres finds its data automatically</button>
+      <button class="qopt" type="button">C · At /data, next to the parquet file</button>
+      <button class="qopt" type="button">D · At /var/lib/postgresql/data; for 17 and below, mounting elsewhere makes the image create an anonymous volume, and the data does not persist when the container is re-created</button>
+      <p class="qwhy">The postgres image README names the path for PostgreSQL 17 and below and warns what happens otherwise. From 18 the path is version specific, so the README is the thing to re-read whenever the tag changes.</p>
+    </div>
+
+    <p class="quiz-score"></p>
+  </section>
+
+  <section class="section" id="official">
+    <div class="section-kicker">
+      <span class="klabel">Sources covered</span>
+      <h2>What this session teaches, and where it came from</h2>
+    </div>
+    <div class="covered">
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Compose services reference</span><span class="note">Docker Docs, Compose file reference, "Services": depends_on short and long syntax, the three conditions, healthcheck fields, env_file overridden by environment, ports as "HOST:CONTAINER" strings, volumes; read at source 2026-11-16</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Compose networking</span><span class="note">Docker Docs, "Networking in Compose": the single default network, service names as hostnames, the db:5432 example, HOST_PORT vs CONTAINER_PORT; read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">postgres image README</span><span class="note">docker-library postgres README: POSTGRES_PASSWORD the only required variable, the /var/lib/postgresql/data path for 17 and below, the _FILE variants; read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">pg_isready</span><span class="note">PostgreSQL 16 documentation, pg_isready: a connection-status check whose exit status is the result; read at source</span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">Compose has no scheduler</span><span class="note">Follows from the services reference, which has no schedule attribute; taught as that inference</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Stackyard</span><span class="note">Constructed example; the compose.yaml, notebook Dockerfile, connection code and ports on this page are invented and labelled; nothing was run or timed</span></div>
+    </div>
+    <p class="mono" style="margin-top:14px">Every fact on this page, and its verification tier, is recorded in the course's source map.</p>
+  </section>
+
+  <section class="cheat" id="cheatsheet">
+    <h3>Session 5 cheat sheet <span>· pin this</span></h3>
+    <div class="grid-2">
+      <div class="cheat-item"><b>Service name = hostname</b><span>Inside the stack, reach Postgres at db:5432. localhost is always the container itself.</span></div>
+      <div class="cheat-item"><b>"HOST:CONTAINER"</b><span>Quoted string. Left side for your laptop, right side for the process. Pick a free host port.</span></div>
+      <div class="cheat-item"><b>Started is not ready</b><span>Short depends_on orders starts. Add a healthcheck and condition: service_healthy to wait.</span></div>
+      <div class="cheat-item"><b>pg_isready</b><span>test: ["CMD-SHELL", "pg_isready -U postgres"]. Exit 0 means accepting connections.</span></div>
+      <div class="cheat-item"><b>Keep what matters outside</b><span>Writable layer is scratch. Named volume for the database at /var/lib/postgresql/data; bind mount :ro for data files.</span></div>
+      <div class="cheat-item"><b>Names in Git, values in .env</b><span>Commit .env.example; .env in .gitignore and .dockerignore. environment overrides env_file.</span></div>
+    </div>
+  </section>
+
+  <div class="callout next">
+    <span class="nx-pill">Next session</span>
+    <p>Stackyard now starts with one command on any laptop with Docker. Session 6 makes what it starts smaller and safer: a slim multi-stage image, the slim against alpine against distroless argument with both sides on the table, scanning as a category, secrets kept out of every layer, and a release checklist. Then it scores the whole container kit, all six pieces, with the same honesty as session 1's inventory.</p>
+  </div>
+
+  <footer class="pagefoot">
+    <span>Session 5 of 6 · learn-docker-containers-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span><a href="04-the-layer-cache-lab.html">← Prev: The layer cache lab</a> &nbsp;·&nbsp; <a href="06-smaller-safer-shippable.html">Next: Smaller, safer, shippable →</a></span>
+  </footer>
+
+</main>
+
+<script src="../assets/app.js?v=1"></script>
+</body>
+</html>

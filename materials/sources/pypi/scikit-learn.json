@@ -1,0 +1,222 @@
+{
+ "name": "scikit-learn",
+ "version": "1.9.1",
+ "license": "BSD-3-Clause",
+ "files": [
+  {
+   "filename": "scikit_learn-1.9.1-cp311-cp311-macosx_10_9_x86_64.whl",
+   "size": 8823771,
+   "upload_time": "2026-09-10T18:32:29"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp311-cp311-macosx_12_0_arm64.whl",
+   "size": 8290892,
+   "upload_time": "2026-09-10T18:32:32"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 9026402,
+   "upload_time": "2026-09-10T18:32:34"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 9315422,
+   "upload_time": "2026-09-10T18:32:36"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp311-cp311-win_amd64.whl",
+   "size": 8329877,
+   "upload_time": "2026-09-10T18:32:38"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp311-cp311-win_arm64.whl",
+   "size": 7954229,
+   "upload_time": "2026-09-10T18:32:40"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp312-cp312-macosx_10_13_x86_64.whl",
+   "size": 8775209,
+   "upload_time": "2026-09-10T18:32:42"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp312-cp312-macosx_12_0_arm64.whl",
+   "size": 8295541,
+   "upload_time": "2026-09-10T18:32:45"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 8871592,
+   "upload_time": "2026-09-10T18:32:46"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 9166043,
+   "upload_time": "2026-09-10T18:32:49"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp312-cp312-win_amd64.whl",
+   "size": 8262238,
+   "upload_time": "2026-09-10T18:32:51"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp312-cp312-win_arm64.whl",
+   "size": 7902102,
+   "upload_time": "2026-09-10T18:32:53"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp313-cp313-macosx_10_13_x86_64.whl",
+   "size": 8739300,
+   "upload_time": "2026-09-10T18:32:55"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp313-cp313-macosx_12_0_arm64.whl",
+   "size": 8262364,
+   "upload_time": "2026-09-10T18:32:57"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 8823698,
+   "upload_time": "2026-09-10T18:33:00"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 9121732,
+   "upload_time": "2026-09-10T18:33:02"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp313-cp313-win_amd64.whl",
+   "size": 8237244,
+   "upload_time": "2026-09-10T18:33:05"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp313-cp313-win_arm64.whl",
+   "size": 7875398,
+   "upload_time": "2026-09-10T18:33:07"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp314-cp314-macosx_10_15_x86_64.whl",
+   "size": 8747414,
+   "upload_time": "2026-09-10T18:33:10"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp314-cp314-macosx_12_0_arm64.whl",
+   "size": 8279175,
+   "upload_time": "2026-09-10T18:33:12"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp314-cp314-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 8881706,
+   "upload_time": "2026-09-10T18:33:14"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 9152030,
+   "upload_time": "2026-09-10T18:33:17"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp314-cp314t-macosx_10_15_x86_64.whl",
+   "size": 9066066,
+   "upload_time": "2026-09-10T18:33:24"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp314-cp314t-macosx_12_0_arm64.whl",
+   "size": 8647654,
+   "upload_time": "2026-09-10T18:33:26"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp314-cp314t-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 8889070,
+   "upload_time": "2026-09-10T18:33:28"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp314-cp314t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 9131227,
+   "upload_time": "2026-09-10T18:33:31"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp314-cp314t-win_amd64.whl",
+   "size": 8683001,
+   "upload_time": "2026-09-10T18:33:33"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp314-cp314t-win_arm64.whl",
+   "size": 8257996,
+   "upload_time": "2026-09-10T18:33:35"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp314-cp314-win_amd64.whl",
+   "size": 8377024,
+   "upload_time": "2026-09-10T18:33:19"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp314-cp314-win_arm64.whl",
+   "size": 8014196,
+   "upload_time": "2026-09-10T18:33:22"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp315-cp315-macosx_10_15_x86_64.whl",
+   "size": 8747991,
+   "upload_time": "2026-09-10T18:33:37"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp315-cp315-macosx_12_0_arm64.whl",
+   "size": 8279340,
+   "upload_time": "2026-09-10T18:33:39"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp315-cp315-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 8881917,
+   "upload_time": "2026-09-10T18:33:41"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp315-cp315-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 9152805,
+   "upload_time": "2026-09-10T18:33:44"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp315-cp315t-macosx_10_15_x86_64.whl",
+   "size": 9059953,
+   "upload_time": "2026-09-10T18:33:50"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp315-cp315t-macosx_12_0_arm64.whl",
+   "size": 8646602,
+   "upload_time": "2026-09-10T18:33:53"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp315-cp315t-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 8880366,
+   "upload_time": "2026-09-10T18:33:55"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp315-cp315t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 9129640,
+   "upload_time": "2026-09-10T18:33:58"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp315-cp315t-win_amd64.whl",
+   "size": 8678083,
+   "upload_time": "2026-09-10T18:34:00"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp315-cp315t-win_arm64.whl",
+   "size": 8259434,
+   "upload_time": "2026-09-10T18:34:02"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp315-cp315-win_amd64.whl",
+   "size": 8376719,
+   "upload_time": "2026-09-10T18:33:46"
+  },
+  {
+   "filename": "scikit_learn-1.9.1-cp315-cp315-win_arm64.whl",
+   "size": 8014341,
+   "upload_time": "2026-09-10T18:33:48"
+  },
+  {
+   "filename": "scikit_learn-1.9.1.tar.gz",
+   "size": 7786908,
+   "upload_time": "2026-09-10T18:34:04"
+  }
+ ]
+}

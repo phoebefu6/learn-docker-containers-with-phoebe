@@ -1,0 +1,17 @@
+{
+ "name": "fastapi",
+ "version": "0.163.1",
+ "license": "MIT",
+ "files": [
+  {
+   "filename": "fastapi-0.163.1-py3-none-any.whl",
+   "size": 154541,
+   "upload_time": "2026-11-15T09:51:29"
+  },
+  {
+   "filename": "fastapi-0.163.1.tar.gz",
+   "size": 544796,
+   "upload_time": "2026-11-15T09:51:31"
+  }
+ ]
+}

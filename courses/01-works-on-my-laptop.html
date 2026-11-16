@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Session 1 of 6. The hidden dependencies a data project carries without anyone writing them down, what a virtualenv, a container and a virtual machine each capture, and a dependency inventory for the constructed Stackyard team.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="Why it works on your laptop and nowhere else - learn docker containers with phoebe">
+<meta property="og:description" content="Session 1 of 6. Seven hidden dependencies, virtualenv against container against VM, and a dependency inventory you can run on any project today.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/courses/01-works-on-my-laptop.html">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Why it works on your laptop and nowhere else - learn docker containers with phoebe">
+<meta name="twitter:description" content="Session 1 of 6. Hidden dependencies, what each isolation tool writes down, and a dependency inventory.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Session 1 · Works on my laptop - learn docker containers with phoebe</title>
+<link rel="stylesheet" href="../assets/style.css?v=1">
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="wrap">
+    <span class="crumb"><a href="../index.html">learn-docker-containers-with-phoebe</a> / Session 1 of 6</span>
+    <button class="btn" id="toggle-all" type="button">Expand all</button>
+    <button class="btn primary" id="zoom-toggle" type="button">Projector zoom: off</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Learn Docker &amp; Containers with Phoebe · Session 1 of 6</div>
+    <h1>Why it works on <span class="accent">your laptop</span> and nowhere else</h1>
+    <p class="sub">A project that runs on one machine is not a project that runs. It is a project plus a machine, and the machine is carrying half the instructions in places nobody reads: the Python it happens to have, a library installed by hand last spring, a password in a shell profile, a file at a path with someone's name in it. Tonight we find those instructions, sort them, and decide where each one should be written down instead.</p>
+    <div class="chip-row">
+      <span class="chip level">🟢 Foundations</span>
+      <span class="chip audience">Data, analytics and ML people who ship notebooks, APIs and jobs</span>
+      <span class="chip audience">No Docker install needed</span>
+      <span class="chip time">45 min</span>
+    </div>
+    <div class="agenda">
+      <span class="a1" style="flex:1">0-3 · Welcome</span>
+      <span class="a2" style="flex:4">3-18 · Hidden dependencies and what isolates them</span>
+      <span class="a3" style="flex:5">18-40 · Build-along: Stackyard's dependency inventory</span>
+      <span class="a4" style="flex:1">40-45 · Q&amp;A</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="intro">
+    <div class="section-kicker">
+      <span class="klabel">Part 0</span>
+      <h2>Where we start</h2>
+    </div>
+    <p class="lede">One question runs through all six sessions: if your laptop died tonight, could a teammate run your project tomorrow with one command, and how long would the rebuild take? A container is the cheapest honest answer, because a container is a written-down environment: every assumption the laptop was making, turned into a line a machine can check. We carry one running case the whole way, the Constructed Stackyard example: a four-person analytics team with a Jupyter notebook, a small FastAPI scoring API, a nightly Python job and a Postgres database, all of which work on exactly one analyst's laptop. Each session adds one piece to Stackyard's container kit.</p>
+
+    <div class="legend">
+      <span class="pill">🎫 Clear all three quiz questions to stamp your passport</span>
+      <span class="pill">Live = presented in the 45 minutes</span>
+      <span class="pill">Self-study = the full depth, after class</span>
+      <span class="pill">★ Build-along = do it yourself, in the page</span>
+    </div>
+
+    <div class="callout win">
+      <p><strong>★ What you walk out with tonight.</strong> A dependency inventory for Stackyard, sorted into seven kinds, with the place in the container kit where each one will be written down. The same worksheet runs on any project you own, in about fifteen minutes, with no Docker installed.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-1">
+    <div class="section-kicker">
+      <span class="klabel">Part 1 · covers hidden dependencies</span>
+      <h2>Seven things your project needs that nobody wrote down</h2>
+      <span class="tag concept">6 min live</span>
+    </div>
+    <p class="lede">When the Stackyard scoring API starts, it reaches for far more than its own code. Some of what it reaches for is written down, in Git or in <code>requirements.txt</code>. Most of it is just there, on the laptop, because somebody put it there once. A hidden dependency is anything the program needs that the repository does not describe. The figure is the scoring API on the analyst's laptop, with every reach drawn.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The constructed Stackyard scoring API in the centre, with lines to six kinds of dependency it reaches for on the analyst's laptop. Left: Python 3.12 from Homebrew, not written down; packages, only the top level written in requirements.txt; an OS library installed by hand, not written down. Right: DB_PASSWORD exported in the shell profile, not written down; a data file under the analyst's home folder and Postgres on localhost, not written down; the nightly run at 02:00 laptop time, not written down. Only the code itself is fully in Git.">
+        <defs>
+          <filter id="s1aSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="11" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s1aHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s1aAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s1aH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s1aL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s1aS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s1aB { font: 800 11px Inter, sans-serif; fill: #0E1030; }
+          .s1aW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s1aX { font: 400 11px Inter, sans-serif; fill: #FFFFFF; }
+          .s1aN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s1aH" x="30" y="24">WHAT THE SCORING API REACHES FOR WHEN IT STARTS</text>
+
+        <g filter="url(#s1aSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="330" y="140" width="220" height="74" rx="12" transform="rotate(-0.6 440 177)" fill="#01005E"/>
+          <rect x="30" y="44" width="262" height="78" rx="10" transform="rotate(-0.7 161 83)" fill="#FFFFFF"/>
+          <rect x="30" y="140" width="262" height="78" rx="10" transform="rotate(0.5 161 179)" fill="#FFFFFF"/>
+          <rect x="30" y="236" width="262" height="78" rx="10" transform="rotate(-0.4 161 275)" fill="#FFFFFF"/>
+          <rect x="588" y="44" width="262" height="78" rx="10" transform="rotate(0.6 719 83)" fill="#FFFFFF"/>
+          <rect x="588" y="140" width="262" height="78" rx="10" transform="rotate(-0.5 719 179)" fill="#FFFFFF"/>
+          <rect x="588" y="236" width="262" height="78" rx="10" transform="rotate(0.4 719 275)" fill="#FFFFFF"/>
+          <path d="M330 162 L296 90" marker-end="url(#s1aAr)"/>
+          <path d="M330 178 L296 178" marker-end="url(#s1aAr)"/>
+          <path d="M330 194 L296 266" marker-end="url(#s1aAr)"/>
+          <path d="M550 162 L584 90" marker-end="url(#s1aAr)"/>
+          <path d="M550 178 L584 178" marker-end="url(#s1aAr)"/>
+          <path d="M550 194 L584 266" marker-end="url(#s1aAr)"/>
+          <rect x="44" y="94" width="128" height="20" rx="10" fill="#FF9F5A"/>
+          <rect x="44" y="190" width="150" height="20" rx="10" fill="url(#s1aHc)"/>
+          <rect x="44" y="286" width="128" height="20" rx="10" fill="#FF9F5A"/>
+          <rect x="602" y="94" width="128" height="20" rx="10" fill="#FF9F5A"/>
+          <rect x="602" y="190" width="128" height="20" rx="10" fill="#FF9F5A"/>
+          <rect x="602" y="286" width="128" height="20" rx="10" fill="#FF9F5A"/>
+        </g>
+
+        <text class="s1aW" x="440" y="170" text-anchor="middle">Stackyard scoring API</text>
+        <text class="s1aX" x="440" y="190" text-anchor="middle">uvicorn app.main:app</text>
+
+        <text class="s1aH" x="44" y="66">1 · Python version</text>
+        <text class="s1aS" x="44" y="84">3.12, installed with Homebrew</text>
+        <text class="s1aB" x="108" y="108" text-anchor="middle">not written</text>
+
+        <text class="s1aH" x="44" y="162">2 · Packages</text>
+        <text class="s1aS" x="44" y="180">requirements.txt: top level, unpinned</text>
+        <text class="s1aB" x="119" y="204" text-anchor="middle">half written</text>
+
+        <text class="s1aH" x="44" y="258">3 · OS libraries</text>
+        <text class="s1aS" x="44" y="276">brew install libomp, last spring</text>
+        <text class="s1aB" x="108" y="300" text-anchor="middle">not written</text>
+
+        <text class="s1aH" x="602" y="66">4 · Environment variables</text>
+        <text class="s1aS" x="602" y="84">DB_PASSWORD, exported in ~/.zshrc</text>
+        <text class="s1aB" x="666" y="108" text-anchor="middle">not written</text>
+
+        <text class="s1aH" x="602" y="162">5 · Files and services</text>
+        <text class="s1aS" x="602" y="180">/Users/ana/data/... and localhost:5432</text>
+        <text class="s1aB" x="666" y="204" text-anchor="middle">not written</text>
+
+        <text class="s1aH" x="602" y="258">6 · The clock</text>
+        <text class="s1aS" x="602" y="276">crontab, 02:00 in the laptop's zone</text>
+        <text class="s1aB" x="666" y="300" text-anchor="middle">not written</text>
+
+        <text class="s1aL" x="440" y="244" text-anchor="middle">7 · The code itself</text>
+        <text class="s1aS" x="440" y="262" text-anchor="middle">in Git: the only fully</text>
+        <text class="s1aS" x="440" y="278" text-anchor="middle">written-down part</text>
+
+        <text class="s1aN" x="30" y="344">Constructed Stackyard example. Orange = lives only on this laptop; hatched = partly written down.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - one of seven things the API needs is fully written down, and that one is the code</figcaption>
+    </figure>
+
+    <details class="card" open>
+      <summary><span class="mode live">Live</span>The seven kinds, and how each one breaks a teammate's run<span class="mini">4 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>Python version.</strong> The laptop has 3.12. A teammate's machine has whatever it has. Code that uses a 3.12 feature fails on 3.10 with a syntax error, and a pickled model or a joblib file saved under one version may refuse to load under another.</p>
+        <p><strong>Packages.</strong> <code>requirements.txt</code> says <code>pandas</code> and <code>scikit-learn</code> with no versions, so "install the requirements" means "install whatever is newest today". The laptop has the versions from the day the analyst first ran <code>pip install</code>. Those two sets drift apart a little every week.</p>
+        <p><strong>OS libraries.</strong> Some Python packages lean on system libraries that pip does not install. The analyst ran <code>brew install libomp</code> to fix an import error months ago and forgot. Nothing in the repository mentions it.</p>
+        <p><strong>Environment variables.</strong> <code>DB_PASSWORD</code> is exported in the analyst's shell profile. On any other machine it is simply absent, and the API fails at its first database call, often with an error that never mentions the variable.</p>
+        <p><strong>Files and services.</strong> The scoring code reads <code>/Users/ana/data/scores_2025.parquet</code>, a path with a person's name in it, and connects to Postgres on <code>localhost:5432</code>, a database that exists because Homebrew started it at login.</p>
+        <p><strong>The clock.</strong> The nightly job runs from the analyst's crontab at 02:00 in the laptop's time zone. When the laptop sleeps, the job does not run. When the laptop flies to another time zone, "nightly" moves with it.</p>
+        <p><strong>The code.</strong> In Git, reviewed, versioned. The one part that is fully written down, and the one part nobody was worried about.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Why a requirements file is not enough on its own<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>A requirements file only describes one of the seven kinds, and even that one partially. Without versions it describes a moving target. With top-level versions only, every package those packages need (numpy under pandas, scipy and joblib under scikit-learn) still floats. And a pinned version is not a pinned file: the same version of numpy ships as different wheel files for different operating systems, processor types and C libraries, so "numpy 2.5.5" on a Mac and on a Linux server are two different binaries.</p>
+        <p>Pin every package, including the ones you did not ask for by name, which <code>pip freeze</code> on a working environment will print for you. Then accept that the file still says nothing about Python itself, the OS, the variables, the files, the services or the clock. That is the gap a container closes.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>Even the base image moves.</strong> At the time of writing, the official <code>python:latest</code> image on Docker Hub is Python 3.15.2: its tag list reads "3.15.2, 3.15, 3, latest". A Dockerfile written today as <code>FROM python:latest</code> on a team that develops on 3.12 is already building on a different Python, and Docker's own best-practice guide says why: "Image tags are mutable, meaning a publisher can update a tag to point to a new image." Writing the environment down only helps if what you write down stays put. Session 2 shows how to pin it.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-2">
+    <div class="section-kicker">
+      <span class="klabel">Part 2 · covers virtualenv, container and virtual machine</span>
+      <h2>What a virtualenv, a container and a VM each write down</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">There are three common tools for "make it run somewhere else", and the useful way to compare them is not speed or fashion but coverage: which of the layers under your code does each one carry with it, and which does it borrow from whatever machine it lands on? Hatched bars below travel with the project. White bars are not carried: they come from whatever machine the project lands on, or, for the code, from Git beside it.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three stacks of six layers each, from hardware at the bottom to your code at the top. A virtualenv carries only the packages; it borrows the Python interpreter, the OS libraries, the kernel and the hardware from the host, and the code sits beside it in Git. A container carries the code, the packages, the Python interpreter and the OS libraries, and borrows the kernel and the hardware. A virtual machine carries everything except the hardware, including its own kernel.">
+        <defs>
+          <filter id="s1bSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="23" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s1bHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+        </defs>
+        <style>
+          .s1bH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s1bL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s1bS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s1bA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s1bN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s1bH" x="170" y="30" text-anchor="middle">VIRTUALENV</text>
+        <text class="s1bH" x="440" y="30" text-anchor="middle">CONTAINER</text>
+        <text class="s1bH" x="710" y="30" text-anchor="middle">VIRTUAL MACHINE</text>
+
+        <g filter="url(#s1bSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="44" y="48" width="252" height="32" rx="8" fill="#FFFFFF"/>
+          <rect x="44" y="86" width="252" height="32" rx="8" fill="url(#s1bHc)"/>
+          <rect x="44" y="124" width="252" height="32" rx="8" fill="#FFFFFF"/>
+          <rect x="44" y="162" width="252" height="32" rx="8" fill="#FFFFFF"/>
+          <rect x="44" y="200" width="252" height="32" rx="8" fill="#FFFFFF"/>
+          <rect x="44" y="238" width="252" height="32" rx="8" fill="#FFFFFF"/>
+
+          <rect x="314" y="48" width="252" height="32" rx="8" fill="url(#s1bHc)"/>
+          <rect x="314" y="86" width="252" height="32" rx="8" fill="url(#s1bHc)"/>
+          <rect x="314" y="124" width="252" height="32" rx="8" fill="url(#s1bHc)"/>
+          <rect x="314" y="162" width="252" height="32" rx="8" fill="url(#s1bHc)"/>
+          <rect x="314" y="200" width="252" height="32" rx="8" fill="#FF9F5A"/>
+          <rect x="314" y="238" width="252" height="32" rx="8" fill="#FFFFFF"/>
+
+          <rect x="584" y="48" width="252" height="32" rx="8" fill="url(#s1bHc)"/>
+          <rect x="584" y="86" width="252" height="32" rx="8" fill="url(#s1bHc)"/>
+          <rect x="584" y="124" width="252" height="32" rx="8" fill="url(#s1bHc)"/>
+          <rect x="584" y="162" width="252" height="32" rx="8" fill="url(#s1bHc)"/>
+          <rect x="584" y="200" width="252" height="32" rx="8" fill="url(#s1bHc)"/>
+          <rect x="584" y="238" width="252" height="32" rx="8" fill="#FFFFFF"/>
+
+          <rect x="44" y="292" width="20" height="14" rx="3" fill="url(#s1bHc)"/>
+          <rect x="250" y="292" width="20" height="14" rx="3" fill="#FFFFFF"/>
+          <rect x="456" y="292" width="20" height="14" rx="3" fill="#FF9F5A"/>
+        </g>
+
+        <text class="s1bL" x="58" y="69">Your code (beside it, in Git)</text>
+        <text class="s1bL" x="58" y="107">Packages</text>
+        <text class="s1bL" x="58" y="145">Python interpreter</text>
+        <text class="s1bL" x="58" y="183">OS libraries</text>
+        <text class="s1bL" x="58" y="221">Kernel</text>
+        <text class="s1bL" x="58" y="259">Hardware</text>
+
+        <text class="s1bL" x="328" y="69">Your code</text>
+        <text class="s1bL" x="328" y="107">Packages</text>
+        <text class="s1bL" x="328" y="145">Python interpreter</text>
+        <text class="s1bL" x="328" y="183">OS libraries (Debian, Alpine...)</text>
+        <text class="s1bL" x="328" y="221">Kernel: the host's, shared</text>
+        <text class="s1bL" x="328" y="259">Hardware</text>
+
+        <text class="s1bL" x="598" y="69">Your code</text>
+        <text class="s1bL" x="598" y="107">Packages</text>
+        <text class="s1bL" x="598" y="145">Python interpreter</text>
+        <text class="s1bL" x="598" y="183">OS libraries</text>
+        <text class="s1bL" x="598" y="221">Its own kernel</text>
+        <text class="s1bL" x="598" y="259">Hardware</text>
+
+        <text class="s1bS" x="72" y="303">travels with the project</text>
+        <text class="s1bS" x="278" y="303">not carried by the tool</text>
+        <text class="s1bS" x="484" y="303">shared, and the reason a container is light</text>
+
+        <text class="s1bN" x="30" y="340">On a Mac or Windows laptop, Docker Desktop runs a small Linux VM, and containers share its kernel.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - a container carries everything above the kernel, which is exactly the part that differs between laptops</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Pick the tool by what differs between the machines<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>If the only thing that differs is package versions, and everyone already has the same Python on the same OS, a virtualenv plus a fully pinned requirements file is enough, and it is the lightest tool in the room. Most data teams are not in that situation: one analyst on a Mac, one on Windows, a server on Linux, and three Pythons between them.</p>
+        <p>A container carries the OS libraries and the interpreter as well, so the Mac, the Windows laptop and the Linux server all run the same Debian, the same Python 3.12 and the same packages. It borrows only the kernel, which is why it starts in about the time a process takes to start, rather than the time a machine takes to boot.</p>
+        <p>A virtual machine carries its own kernel too. You reach for one when the kernel itself matters: a different operating system altogether, or isolation strong enough to run code you do not trust. For "the notebook only runs on Ana's laptop", it is more machine than the problem needs.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Getting Docker onto a machine, and what the licence says<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Nothing in these six sessions needs Docker installed: every build-along runs in the page. When you do install it, there are several routes. Docker Desktop is the most common on Mac and Windows. Read its licence before you install it at work: at the time of writing, Docker's terms restrict free use to non-commercial open source projects and to commercial organisations with "fewer than 250 employees and less than US $10,000,000" in annual revenue; larger organisations and government entities need a paid subscription. Docker Engine and the other open source Moby components are not covered by that restriction.</p>
+        <p>Alternatives that run the same images include Podman, Colima and Rancher Desktop. Which one your company allows is a question for whoever owns your laptops, not for a tutorial; ask before you install.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>Where the kernel comes from on a laptop.</strong> Containers share a Linux kernel, and macOS and Windows do not have one. Docker's own documentation is direct about the workaround: "Docker Desktop supports multiple Virtual Machine Managers (VMMs) to power the Linux VM that runs containers." On a Mac, then, your containers share the kernel of one small Linux VM that Docker Desktop manages, and on a Linux server they share the server's own. The image is the same in both places; that is the point.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-3">
+    <div class="section-kicker">
+      <span class="klabel">Part 3 · covers the container kit</span>
+      <h2>The container kit, one piece a session</h2>
+      <span class="tag concept">4 min live</span>
+    </div>
+    <p class="lede">Stackyard does not need a platform. It needs four things written down well enough that a teammate can type one command: what the image is built from, how the API image is built, how the pieces run together, and what has to be true before an image ships. Over six sessions we build exactly that, and measure the rebuild time on the way.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Six pieces of Stackyard's container kit in order: session 1 dependency inventory, session 2 a Dockerfile read layer by layer, session 3 the API's Dockerfile, session 4 a cache-ordered Dockerfile measured on the bench, session 5 compose.yaml for the stack, session 6 a slim image and a release checklist. They feed one outcome: a teammate clones the repository and runs docker compose up. Session 1 is highlighted as tonight's piece.">
+        <defs>
+          <filter id="s1cSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="37" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <marker id="s1cAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s1cH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s1cS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s1cA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s1cW { font: 800 13px Inter, sans-serif; fill: #FFFFFF; }
+          .s1cX { font: 400 11px Inter, sans-serif; fill: #FFFFFF; }
+          .s1cN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <g filter="url(#s1cSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="40" width="126" height="84" rx="10" transform="rotate(-0.8 93 82)" fill="#FF9F5A"/>
+          <rect x="170" y="40" width="126" height="84" rx="10" transform="rotate(0.6 233 82)" fill="#FFFFFF"/>
+          <rect x="310" y="40" width="126" height="84" rx="10" transform="rotate(-0.5 373 82)" fill="#FFFFFF"/>
+          <rect x="450" y="40" width="126" height="84" rx="10" transform="rotate(0.7 513 82)" fill="#EEF1FD"/>
+          <rect x="590" y="40" width="126" height="84" rx="10" transform="rotate(-0.6 653 82)" fill="#FFFFFF"/>
+          <rect x="730" y="40" width="126" height="84" rx="10" transform="rotate(0.5 793 82)" fill="#FFFFFF"/>
+          <path d="M93 128 C 120 170, 300 176, 400 190" marker-end="url(#s1cAr)"/>
+          <path d="M233 128 C 260 160, 360 172, 410 188" marker-end="url(#s1cAr)"/>
+          <path d="M373 128 L 420 186" marker-end="url(#s1cAr)"/>
+          <path d="M653 128 C 620 160, 520 172, 470 188" marker-end="url(#s1cAr)"/>
+          <path d="M513 128 L 460 186" marker-end="url(#s1cAr)"/>
+          <path d="M793 128 C 760 170, 580 176, 480 190" marker-end="url(#s1cAr)"/>
+          <rect x="230" y="194" width="420" height="62" rx="12" transform="rotate(-0.4 440 225)" fill="#01005E"/>
+        </g>
+
+        <text class="s1cA" x="93" y="60" text-anchor="middle">SESSION 1</text>
+        <text class="s1cH" x="93" y="82" text-anchor="middle">Dependency</text>
+        <text class="s1cH" x="93" y="98" text-anchor="middle">inventory</text>
+
+        <text class="s1cA" x="233" y="60" text-anchor="middle">SESSION 2</text>
+        <text class="s1cH" x="233" y="82" text-anchor="middle">A Dockerfile,</text>
+        <text class="s1cS" x="233" y="98" text-anchor="middle">read layer by layer</text>
+
+        <text class="s1cA" x="373" y="60" text-anchor="middle">SESSION 3</text>
+        <text class="s1cH" x="373" y="82" text-anchor="middle">The API's</text>
+        <text class="s1cS" x="373" y="98" text-anchor="middle">Dockerfile</text>
+
+        <text class="s1cA" x="513" y="60" text-anchor="middle">SESSION 4</text>
+        <text class="s1cH" x="513" y="82" text-anchor="middle">Cache-ordered,</text>
+        <text class="s1cS" x="513" y="98" text-anchor="middle">measured</text>
+
+        <text class="s1cA" x="653" y="60" text-anchor="middle">SESSION 5</text>
+        <text class="s1cH" x="653" y="82" text-anchor="middle">compose.yaml</text>
+        <text class="s1cS" x="653" y="98" text-anchor="middle">for the stack</text>
+
+        <text class="s1cA" x="793" y="60" text-anchor="middle">SESSION 6</text>
+        <text class="s1cH" x="793" y="82" text-anchor="middle">Slim image +</text>
+        <text class="s1cS" x="793" y="98" text-anchor="middle">release checklist</text>
+
+        <text class="s1cW" x="440" y="220" text-anchor="middle">A teammate, tomorrow: git clone, then</text>
+        <text class="s1cX" x="440" y="240" text-anchor="middle">docker compose up</text>
+
+        <text class="s1cN" x="30" y="284">Constructed Stackyard example. The pale box is the bench session, where the rebuild time gets measured.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - every piece ends as a file in the repository, and together they make one command enough</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Two numbers to carry: one command, and the rebuild<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>One command.</strong> The test of the kit is not "is there a Dockerfile". It is whether a teammate with Docker and the repository, and nothing else, can start the notebook, the API and the database by typing <code>docker compose up</code>. Every hidden dependency on tonight's list either gets written into one of the kit's files or gets written into the short README that says what the command needs (a filled-in <code>.env</code>, for example). Nothing stays in anyone's head.</p>
+        <p><strong>The rebuild.</strong> A container that takes a minute to rebuild after a one-line code change gets bypassed: people go back to running things on their laptops "just for now". So the kit is also measured. On the session 4 bench, Stackyard's first naive Dockerfile takes a modelled 52.1 seconds to rebuild after a one-line change to the scoring code; the same Dockerfile with its lines in a better order takes 0.5 seconds. Same files, same packages. Session 4 shows exactly why.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>What the kit deliberately leaves out<span class="mini">2 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>No orchestrator, no cloud, no registry pipeline. Running containers on a cluster or a cloud service is a real next step and session 6 ends with a card pointing at it, but Stackyard's problem is not scale; it is that the project only exists on one machine. Docker as one piece of a full CI and deployment platform is taught in <a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/courses/b1-foundations-repo.html">DataOps, builder session 1</a>; here we teach Docker itself, properly, so that piece makes sense when you get there.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>Why the order of lines matters before you have written one.</strong> Docker's documentation on the build cache states the rule the whole of session 4 is built on: "Once a layer changes, then all downstream layers need to be rebuilt as well." A Dockerfile is not a list of settings. It is a sequence, and where you put the line that changes most often decides how much of the sequence runs again.</p>
+    </div>
+  </section>
+
+  <section class="section" id="demo-1">
+    <div class="section-kicker">
+      <span class="klabel">Build-along</span>
+      <h2>Stackyard's dependency inventory</h2>
+      <span class="tag demo">★ 22 min · everyone builds</span>
+    </div>
+    <p class="lede">Below is the evidence from the analyst's laptop (Constructed Stackyard example): a few lines of shell history, the shell profile, the crontab, the requirements file and one line of the scoring code. You will find every hidden dependency in it, sort each into one of the seven kinds, and write down where in the container kit it will live from now on. Nothing to install: the evidence and the worksheet are the whole kit for tonight.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The inventory as a mapping. Left column, where each dependency lives on the laptop today; right column, where Stackyard's container kit will carry it. Python 3.12 from Homebrew becomes a pinned base image in session 3. Unpinned packages become a fully pinned requirements file in session 3. A library installed by hand becomes a written install line or a recorded check that it is not needed, session 3. DB_PASSWORD in the shell profile becomes an env file read by Compose and never put in the image, sessions 5 and 6. The data file under a home folder becomes a mounted volume, session 5. Postgres on localhost becomes a database service reached by its service name, session 5. The crontab at 02:00 laptop time becomes an explicit time zone and a scheduled one-off service, session 5.">
+        <defs>
+          <filter id="s1dSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="41" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <marker id="s1dAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s1dH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s1dL { font: 600 11px Inter, sans-serif; fill: #0E1030; }
+          .s1dS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s1dA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s1dN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s1dH" x="40" y="28">ON THE LAPTOP TODAY</text>
+        <text class="s1dH" x="500" y="28">IN STACKYARD'S CONTAINER KIT</text>
+
+        <g filter="url(#s1dSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="40" y="44" width="340" height="32" rx="8" fill="#FFF0E4"/>
+          <rect x="40" y="84" width="340" height="32" rx="8" fill="#FFF0E4"/>
+          <rect x="40" y="124" width="340" height="32" rx="8" fill="#FFF0E4"/>
+          <rect x="40" y="164" width="340" height="32" rx="8" fill="#FFF0E4"/>
+          <rect x="40" y="204" width="340" height="32" rx="8" fill="#FFF0E4"/>
+          <rect x="40" y="244" width="340" height="32" rx="8" fill="#FFF0E4"/>
+          <rect x="40" y="284" width="340" height="32" rx="8" fill="#FFF0E4"/>
+          <rect x="500" y="44" width="340" height="32" rx="8" fill="#EEF1FD"/>
+          <rect x="500" y="84" width="340" height="32" rx="8" fill="#EEF1FD"/>
+          <rect x="500" y="124" width="340" height="32" rx="8" fill="#EEF1FD"/>
+          <rect x="500" y="164" width="340" height="32" rx="8" fill="#EEF1FD"/>
+          <rect x="500" y="204" width="340" height="32" rx="8" fill="#EEF1FD"/>
+          <rect x="500" y="244" width="340" height="32" rx="8" fill="#EEF1FD"/>
+          <rect x="500" y="284" width="340" height="32" rx="8" fill="#EEF1FD"/>
+          <path d="M386 60 L494 60" marker-end="url(#s1dAr)"/>
+          <path d="M386 100 L494 100" marker-end="url(#s1dAr)"/>
+          <path d="M386 140 L494 140" marker-end="url(#s1dAr)"/>
+          <path d="M386 180 L494 180" marker-end="url(#s1dAr)"/>
+          <path d="M386 220 L494 220" marker-end="url(#s1dAr)"/>
+          <path d="M386 260 L494 260" marker-end="url(#s1dAr)"/>
+          <path d="M386 300 L494 300" marker-end="url(#s1dAr)"/>
+        </g>
+
+        <text class="s1dL" x="54" y="64">Python 3.12 from Homebrew</text>
+        <text class="s1dL" x="54" y="104">pandas, scikit-learn: no versions</text>
+        <text class="s1dL" x="54" y="144">brew install libomp, months ago</text>
+        <text class="s1dL" x="54" y="184">export DB_PASSWORD=... in ~/.zshrc</text>
+        <text class="s1dL" x="54" y="224">/Users/ana/data/scores_2025.parquet</text>
+        <text class="s1dL" x="54" y="264">Postgres 16 on localhost:5432</text>
+        <text class="s1dL" x="54" y="304">crontab: 0 2 * * *, laptop time</text>
+
+        <text class="s1dL" x="514" y="64">A pinned base image</text>
+        <text class="s1dA" x="826" y="64" text-anchor="end">s3</text>
+        <text class="s1dL" x="514" y="104">Every package pinned</text>
+        <text class="s1dA" x="826" y="104" text-anchor="end">s3</text>
+        <text class="s1dL" x="514" y="144">An install line, or a proof it is unneeded</text>
+        <text class="s1dA" x="826" y="144" text-anchor="end">s3</text>
+        <text class="s1dL" x="514" y="184">An env file Compose reads, never the image</text>
+        <text class="s1dA" x="826" y="184" text-anchor="end">s5</text>
+        <text class="s1dL" x="514" y="224">A volume mounted at /data</text>
+        <text class="s1dA" x="826" y="224" text-anchor="end">s5</text>
+        <text class="s1dL" x="514" y="264">A db service, reached as db:5432</text>
+        <text class="s1dA" x="826" y="264" text-anchor="end">s5</text>
+        <text class="s1dL" x="514" y="304">TZ set, a scheduled one-off job</text>
+        <text class="s1dA" x="826" y="304" text-anchor="end">s5</text>
+
+        <text class="s1dN" x="40" y="346">Constructed Stackyard example. Every left box is a sentence nobody wrote; every right box is a line a machine checks.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - the inventory is a translation table: from "it is on the laptop" to "it is in a file"</figcaption>
+    </figure>
+
+    <div class="steps">
+      <div class="step">
+        <p><strong>Read the evidence as a stranger.</strong> You are the teammate who has to run Stackyard tomorrow on a fresh machine. Read the evidence below once, slowly, and mark every line that assumes something about the machine rather than the project.</p>
+        <div class="prompt-box good"><span class="label">★ Step 1 · evidence from the analyst's laptop (constructed)</span>$ tail ~/.zsh_history
+brew install python@3.12
+brew install postgresql@16 &amp;&amp; brew services start postgresql@16
+brew install libomp          # fixed "Library not loaded: libomp.dylib"
+pip install pandas scikit-learn fastapi uvicorn psycopg2-binary
+
+$ grep -i stackyard ~/.zshrc
+export DB_PASSWORD=stackyard-dev-123
+export STACKYARD_DATA=/Users/ana/data
+
+$ crontab -l
+0 2 * * * cd ~/stackyard &amp;&amp; python jobs/nightly_scores.py
+
+$ cat requirements.txt
+pandas
+scikit-learn
+fastapi
+uvicorn
+
+$ grep -n parquet app/scoring.py
+14:  SCORES = pd.read_parquet("/Users/ana/data/scores_2025.parquet")</div>
+      </div>
+      <div class="step">
+        <p><strong>Sort every finding into one of the seven kinds.</strong> Python version, packages, OS libraries, environment variables, files and services, the clock, the code. One finding can expose two kinds; write both. Then compare with one reading below.</p>
+        <div class="prompt-box good"><span class="label">★ Step 2 · one reading of the inventory</span>Python version   3.12, from Homebrew; nowhere in the repository
+Packages         4 names in requirements.txt, no versions;
+                 psycopg2-binary installed by hand, missing from the file
+OS libraries     libomp, installed by hand to fix an import error
+Env variables    DB_PASSWORD (a secret) and STACKYARD_DATA, in ~/.zshrc
+Files            /Users/ana/data/scores_2025.parquet, hard-coded in
+                 scoring.py line 14, ignoring STACKYARD_DATA anyway
+Services         Postgres 16, started by brew services at login
+The clock        nightly job at 02:00 in the laptop's time zone, and
+                 only when the laptop is awake
+The code         in Git: app/, jobs/, notebooks/</div>
+      </div>
+      <div class="step">
+        <p><strong>Give each one a home in the kit.</strong> For every line of the inventory, write which file will carry it from now on and which session builds that file. Use the figure above as the answer key only after you have tried. Notice the one that must never go into the image at all.</p>
+        <div class="prompt-box good"><span class="label">★ Step 3 · the inventory with a home column</span>Python 3.12         -&gt; FROM python:3.12-slim in the Dockerfile    (s3)
+packages            -&gt; requirements.txt, every package pinned       (s3)
+psycopg2-binary     -&gt; added to requirements.txt, pinned            (s3)
+libomp              -&gt; a written install line, or a recorded check
+                       that the Linux wheel does not need it        (s3)
+DB_PASSWORD         -&gt; .env read by Compose, kept out of the image
+                       and out of Git                               (s5, s6)
+STACKYARD_DATA      -&gt; environment: in compose.yaml                 (s5)
+the parquet file    -&gt; a volume mounted at /data; scoring.py reads
+                       the path from STACKYARD_DATA                 (s5)
+Postgres 16         -&gt; a db service in compose.yaml, image pinned   (s5)
+02:00 nightly       -&gt; TZ set explicitly; the job as a one-off
+                       service run on a schedule                    (s5)</div>
+      </div>
+      <div class="step">
+        <p><strong>Fix the one line of code the kit cannot fix for you.</strong> A container can mount the data anywhere you like, but it cannot make a hard-coded <code>/Users/ana</code> path exist. Change line 14 so the path comes from the environment, with no default that points at a person.</p>
+        <div class="prompt-box good"><span class="label">★ Step 4 · scoring.py line 14, before and after</span># before: works on one laptop
+SCORES = pd.read_parquet("/Users/ana/data/scores_2025.parquet")
+
+# after: the environment says where the data is
+import os
+DATA_DIR = os.environ["STACKYARD_DATA"]          # fails loudly if unset
+SCORES = pd.read_parquet(os.path.join(DATA_DIR, "scores_2025.parquet"))</div>
+      </div>
+      <div class="step">
+        <p><strong>Score the inventory, then save it.</strong> Grade it on the six rows below. Save the result as <code>docs/dependency-inventory.md</code> in the repository: that file is piece one of Stackyard's container kit, and session 6 scores the whole kit with the same honesty.</p>
+      </div>
+    </div>
+
+    <div class="scorecard" data-msgs="Every row solid. This piece of the kit is ready for the next one.|Strong. Take the weakest row into the next session and fix that one thing.|Halfway is exactly where this should be. Pick the two lowest rows and only those.|Mostly not yet, which is fine this early. Fix the lowest row before the next session." data-title="Dependency inventory: six rows" data-foot="A row at 0 is a hidden dependency that will surface on someone else's machine, usually on a Friday.">
+      <div class="sc-row"><div class="sc-q">The Python version is written down, to the minor version
+        <em>"Python 3" scores 0. "3.12" scores the point.</em></div></div>
+      <div class="sc-row"><div class="sc-q">Every package is listed, including the ones installed by hand
+        <em>Here, psycopg2-binary was installed but never added to the file.</em></div></div>
+      <div class="sc-row"><div class="sc-q">Every system library or tool installed outside pip is listed
+        <em>Or there is a written note that it is not needed in the container, and how you checked.</em></div></div>
+      <div class="sc-row"><div class="sc-q">Every environment variable is named, and secrets are marked as secrets
+        <em>Names in the inventory; values never. A secret value in a shared document is a leak.</em></div></div>
+      <div class="sc-row"><div class="sc-q">No path in the code contains a person's name or home folder
+        <em>Data locations come from configuration, with no personal default.</em></div></div>
+      <div class="sc-row"><div class="sc-q">Every service and every schedule has an owner other than one laptop
+        <em>Postgres and the nightly job each have a line saying where they will run.</em></div></div>
+    </div>
+
+    <div class="callout tip">
+      <p><strong>Run it on a fresh machine, not in your head.</strong> The cheapest honest test of an inventory is a colleague with a clean laptop (or a fresh cloud shell) following only what is written. Every place they have to ask you a question is a line missing from the inventory.</p>
+    </div>
+  </section>
+
+  <section class="section" id="exercise">
+    <div class="section-kicker">
+      <span class="klabel">Homework</span>
+      <h2>Before session 2</h2>
+      <span class="tag exercise">30 min</span>
+    </div>
+    <ol>
+      <li><strong>Run the inventory on a project of your own.</strong> One you could not hand to a colleague today. Use the seven kinds from Part 1 as columns and fill every one, even if the answer is "none".</li>
+      <li><strong>Find the hand-installed thing.</strong> Search your shell history for <code>brew install</code>, <code>apt install</code>, <code>conda install</code> or a manual download. Which of those does your project silently need?</li>
+      <li><strong>Grep for personal paths.</strong> Search the repository for your username and for <code>/Users/</code>, <code>/home/</code> and <code>C:\Users</code>. Every hit is a file the container cannot find.</li>
+      <li><strong>Pin what you have.</strong> In your working environment, run <code>pip freeze</code> and compare it with your requirements file. Count the packages that are installed but not listed; bring the number to session 2.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="quiz">
+    <div class="section-kicker">
+      <span class="klabel">Check yourself</span>
+      <h2>Three questions</h2>
+    </div>
+    <p>Clear all three and session 1 gets stamped in your passport.</p>
+
+    <div class="quiz-q" data-answer="1">
+      <p class="qtext">1 · Stackyard's requirements file lists <code>pandas</code> and <code>scikit-learn</code> with no versions. A teammate installs it today and the model file will not load. What is the most precise description of the problem?</p>
+      <button class="qopt" type="button">A · The teammate's machine is too slow</button>
+      <button class="qopt" type="button">B · The file names packages but not versions, so "install the requirements" installs today's releases rather than the ones the model was saved with; the packages are only half written down</button>
+      <button class="qopt" type="button">C · scikit-learn cannot be installed with pip</button>
+      <button class="qopt" type="button">D · Requirements files only work on macOS</button>
+      <p class="qwhy">An unpinned name describes a moving target. Pin every package, including the ones underneath the ones you asked for, and the version on the laptop and the version in the container stop drifting apart.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="3">
+      <p class="qtext">2 · What does a container carry with the project that a virtualenv does not?</p>
+      <button class="qopt" type="button">A · Its own kernel</button>
+      <button class="qopt" type="button">B · The hardware drivers</button>
+      <button class="qopt" type="button">C · Nothing; they isolate exactly the same layers</button>
+      <button class="qopt" type="button">D · The Python interpreter and the OS libraries, on top of the packages and the code; it borrows only the host's kernel</button>
+      <p class="qwhy">A virtualenv carries packages and borrows everything under them. A container carries everything above the kernel, which is the part that differs between laptops. A virtual machine is the one with its own kernel.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="0">
+      <p class="qtext">3 · <code>DB_PASSWORD</code> lives in the analyst's shell profile. Where does Stackyard's container kit put it?</p>
+      <button class="qopt" type="button">A · In an env file that Compose reads at run time, kept out of the image and out of Git, with only its name written in the inventory</button>
+      <button class="qopt" type="button">B · In an ENV line in the Dockerfile, so it is always there</button>
+      <button class="qopt" type="button">C · In the README, so teammates can copy it</button>
+      <button class="qopt" type="button">D · Hard-coded in app/main.py as a default</button>
+      <p class="qwhy">A secret is a dependency whose value must not be written down where everyone can read it. Anything baked into an image travels with the image to everyone who can pull it; session 6 shows exactly how, and how to keep it out.</p>
+    </div>
+
+    <p class="quiz-score"></p>
+  </section>
+
+  <section class="section" id="official">
+    <div class="section-kicker">
+      <span class="klabel">Sources covered</span>
+      <h2>What this session teaches, and where it came from</h2>
+    </div>
+    <div class="covered">
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">The seven kinds of hidden dependency</span><span class="note">A working frame for these sessions, not a published standard; built from what a container image has to carry</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Mutable tags and python:latest</span><span class="note">Docker Docs, "Building best practices" (tags are mutable) and the docker-library python README (latest = 3.15.2), read at source 2026-11-16</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Images, containers, layers</span><span class="note">Docker Docs, "Docker overview" and "Understanding the image layers", read at source; the full model is session 2</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Docker Desktop's Linux VM</span><span class="note">Docker Docs, "Virtual Machine Manager", read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Docker Desktop licence</span><span class="note">Docker pricing FAQ and Desktop licence terms (250 employees, US $10M revenue), read at source; re-verify before relying on it</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">The downstream rebuild rule</span><span class="note">Docker Docs, "Docker build cache", read at source; the bench numbers quoted are the session 4 canon</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Stackyard</span><span class="note">Constructed example; the evidence on this page is invented and labelled</span></div>
+    </div>
+    <p class="mono" style="margin-top:14px">Every fact on this page, and its verification tier, is recorded in the course's source map.</p>
+  </section>
+
+  <section class="cheat" id="cheatsheet">
+    <h3>Session 1 cheat sheet <span>· pin this</span></h3>
+    <div class="grid-2">
+      <div class="cheat-item"><b>Hidden dependency</b><span>Anything the program needs that the repository does not describe.</span></div>
+      <div class="cheat-item"><b>Seven kinds</b><span>Python version, packages, OS libraries, env variables, files and services, the clock, the code.</span></div>
+      <div class="cheat-item"><b>Venv, container, VM</b><span>Packages only; everything above the kernel; everything including a kernel.</span></div>
+      <div class="cheat-item"><b>Pin everything</b><span>Every package, including the ones you never asked for by name. Tags move too.</span></div>
+      <div class="cheat-item"><b>No personal paths</b><span>Data locations come from configuration, never from a home folder.</span></div>
+      <div class="cheat-item"><b>Secrets are special</b><span>Name them in the inventory; never put their values in an image, a README or Git.</span></div>
+    </div>
+  </section>
+
+  <div class="callout next">
+    <span class="nx-pill">Next session</span>
+    <p>The inventory says what has to be written down. Session 2 explains what it gets written into: an image as a read-only stack of filesystem changes, a container as that stack plus one writable layer, tags against digests, and registries. You will read a Dockerfile line by line and predict its layers before anything is built.</p>
+  </div>
+
+  <footer class="pagefoot">
+    <span>Session 1 of 6 · learn-docker-containers-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span><a href="../index.html">← Course home</a> &nbsp;·&nbsp; <a href="02-images-containers-layers.html">Next: Images, containers, layers: the mental model →</a></span>
+  </footer>
+
+</main>
+
+<script src="../assets/app.js?v=1"></script>
+</body>
+</html>

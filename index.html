@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Six sessions on Docker and containers for data, analytics and ML people: hidden dependencies, images and layers, a Dockerfile for a Python data project, a real layer cache lab in the browser, Compose for notebook, API and database, and a slim, safe, shippable image.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="Learn Docker &amp; Containers with Phoebe">
+<meta property="og:description" content="Why it works on your laptop and nowhere else, and the one container that fixes it. Write a Dockerfile for a data project, keep rebuilds fast, and run the whole stack with one command.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Learn Docker &amp; Containers with Phoebe">
+<meta name="twitter:description" content="A real layer cache lab in your browser: edit a Dockerfile, change one file, and see which layers rebuild, how long it takes and how big the image ends up.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Learn Docker &amp; Containers with Phoebe</title>
+<link rel="stylesheet" href="assets/style.css?v=1">
+<style>
+
+  .stats-row { display: flex; gap: 2.4rem; margin-top: 1.5rem; flex-wrap: wrap; }
+  .stat b { display: block; font-size: 2.1rem; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: .72rem; opacity: 1; text-transform: uppercase; letter-spacing: .09em; font-weight: 600; }
+
+  .course-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+  .course-card {
+    border: 1px solid var(--hairline);
+    border-top: 4px solid var(--diff, var(--indigo));
+    border-radius: var(--radius);
+    padding: 1.2rem 1.3rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    text-decoration: none;
+    color: var(--ink);
+    background: #fff;
+    transition: box-shadow .15s ease, border-color .15s ease, transform .15s ease;
+    position: relative;
+  }
+  .course-card:hover { border-color: var(--indigo-soft); border-top-color: var(--diff, var(--indigo)); box-shadow: 0 8px 28px rgba(var(--shadow-rgb),.16); transform: translateY(-3px); }
+  .course-card .cicon { font-size: 1.7rem; line-height: 1; }
+  .course-card .cnum { font-size: .72rem; font-weight: 700; color: var(--indigo); text-transform: uppercase; letter-spacing: .1em; }
+  .course-card h3 { font-size: 1.05rem; font-weight: 800; line-height: 1.3; }
+  .course-card p { font-size: .85rem; color: var(--muted); flex: 1; }
+  .course-card .meta { display: flex; gap: .4rem; flex-wrap: wrap; }
+
+  .diff-legend { display: flex; gap: 1rem; margin-top: 1.6rem; font-size: .74rem; color: var(--muted); font-weight: 600; flex-wrap: wrap; }
+  .diff-legend i { display: inline-block; width: .85rem; height: .35rem; border-radius: 999px; margin-right: .35rem; vertical-align: middle; }
+
+  .paths { margin-top: 2.6rem; }
+  .paths h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: .3rem; }
+  .paths .plede { color: var(--muted); font-size: .92rem; margin-bottom: .8rem; }
+  .path { display: flex; gap: .55rem; align-items: center; padding: .75rem 0; border-bottom: .5px solid var(--hairline); flex-wrap: wrap; }
+  .path:last-child { border-bottom: none; }
+  .path b { min-width: 15.5rem; font-size: .9rem; }
+  .path .pstep { background: var(--indigo-50); color: var(--indigo-deep); border-radius: 999px; padding: .16rem .68rem; font-weight: 700; font-size: .8rem; text-decoration: none; transition: all .12s ease; }
+  .path .pstep:hover { background: var(--indigo); color: #fff; }
+  .path .parr { color: var(--muted); font-weight: 700; }
+
+  .mm-section { margin-top: 1.6rem; }
+  .mm-section h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: .2rem; }
+  .mm-section .mm-lede { color: var(--muted); font-size: .92rem; margin-bottom: .4rem; }
+  .mm-wrap { border: 1px solid var(--hairline); border-radius: var(--radius); background: linear-gradient(180deg,#fff,var(--indigo-50)); padding: .6rem; overflow-x: auto; }
+  .mm-svg { width: 100%; height: auto; display: block; max-width: 60rem; margin: 0 auto; min-width: 34rem; }
+  .mm-link { cursor: pointer; text-decoration: none; }
+  .mm-node rect { transition: opacity .15s ease, filter .15s ease; }
+  .mm-node text { pointer-events: none; }
+  .mm-link:hover .mm-node rect { filter: brightness(1.06); }
+  .mm-edge { transition: opacity .15s ease; }
+
+  .not-this { border: 1px solid var(--hairline); border-left: 4px solid var(--amber); border-radius: var(--radius); background: #fff; padding: 1.1rem 1.3rem; margin-top: 1.2rem; }
+  .not-this h3 { font-size: .95rem; font-weight: 800; margin-bottom: .5rem; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Learn with Phoebe · Programming</div>
+    <h1>Learn <span class="accent">Docker &amp; Containers</span> with Phoebe</h1>
+    <p class="sub">Why it works on your laptop and nowhere else, and the one container that fixes it. Write a Dockerfile for a data project, keep rebuilds fast, and run the whole stack with one command. One question runs through all six sessions: if your laptop died tonight, could a teammate run your project tomorrow with one command, and how long would the rebuild take? You need a terminal you are comfortable in (<a href="https://phoebefu6.github.io/learn-command-line-with-phoebe/">Learn the Command Line</a> first if not) and nothing else: every build-along runs in the page.</p>
+    <div class="stats-row">
+      <div class="stat"><b data-count="6">6</b><span>sessions</span></div>
+      <div class="stat"><b data-count="13">13</b><span>lint rules, unit-tested</span></div>
+      <div class="stat"><b data-count="6">6</b><span>rungs on the cache ladder</span></div>
+      <div class="stat"><b data-count="9">9</b><span>real base image sizes</span></div>
+      <div class="stat"><b data-count="45">45</b><span>min per session</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section">
+    <div class="paths" style="margin-top:0">
+      <h2>The six sessions 🎯 <span style="font-size:.85rem;font-weight:600;color:var(--muted)">· from a list of hidden dependencies to an image you can ship</span></h2>
+      <p class="plede">The running case is <strong>Stackyard</strong>, a constructed four-person analytics team whose Jupyter notebook, small FastAPI scoring API, nightly Python job and Postgres database all work on exactly one analyst's laptop. Each session adds one piece to Stackyard's container kit, and the last session scores the whole kit.</p>
+    </div>
+
+    <div class="course-grid">
+      <a class="course-card" href="courses/01-works-on-my-laptop.html" style="--diff:#34D399">
+        <span class="cicon">💻</span>
+        <span class="cnum">Session 1 · foundations</span>
+        <h3>Why it works on your laptop and nowhere else</h3>
+        <p>The hidden dependencies a project carries without anyone writing them down: OS libraries, the Python version, environment variables, data paths, the clock. Virtualenv, container and virtual machine, side by side. Build-along: Stackyard's dependency inventory.</p>
+        <span class="meta"><span class="pill amber">▶ Start here</span></span>
+      </a>
+      <a class="course-card" href="courses/02-images-containers-layers.html" style="--diff:#34D399">
+        <span class="cicon">🧱</span>
+        <span class="cnum">Session 2 · foundations</span>
+        <h3>Images, containers, layers: the mental model</h3>
+        <p>An image is a read-only stack of filesystem changes; a container is that stack plus one writable layer. Tags against digests, registries, and what an OCI image actually contains. Build-along: read a Dockerfile line by line and predict its layers.</p>
+        <span class="meta"><span class="pill">the mental model</span></span>
+      </a>
+      <a class="course-card" href="courses/03-a-dockerfile-for-python.html" style="--diff:#FBBF24">
+        <span class="cicon">📝</span>
+        <span class="cnum">Session 3 · core</span>
+        <h3>Writing a Dockerfile for a Python data project</h3>
+        <p>FROM, WORKDIR, COPY, RUN, ENV, EXPOSE, CMD against ENTRYPOINT, .dockerignore, pinning and a non-root USER, each with the reason it exists. Build-along: containerise the Stackyard scoring API.</p>
+        <span class="meta"><span class="pill">your first Dockerfile</span></span>
+      </a>
+      <a class="course-card" href="courses/04-the-layer-cache-lab.html" style="--diff:#FB923C">
+        <span class="cicon">⚡</span>
+        <span class="cnum">Session 4 · bench night</span>
+        <h3>The layer cache lab</h3>
+        <p>Edit a Dockerfile, change one file, and the lab walks Docker's cache rules for real: which layers rebuild, how long, how big the image ends up, and what a hadolint-style lint says. Then break it on purpose and watch the rebuild jump.</p>
+        <span class="meta"><span class="pill amber">★ the bench</span></span>
+      </a>
+      <a class="course-card" href="courses/05-compose-one-command.html" style="--diff:#FB923C">
+        <span class="cicon">🎛️</span>
+        <span class="cnum">Session 5 · stretch</span>
+        <h3>Compose: notebook, API, database, one command</h3>
+        <p>Services, the default network and service-name addresses, ports, volumes, depends_on with a healthcheck, and env files. Build-along: compose.yaml for Stackyard's notebook, API and Postgres, plus the nightly job.</p>
+        <span class="meta"><span class="pill">one command</span></span>
+      </a>
+      <a class="course-card" href="courses/06-smaller-safer-shippable.html" style="--diff:#F87171">
+        <span class="cicon">🚢</span>
+        <span class="cnum">Session 6 · capstone</span>
+        <h3>Smaller, safer, shippable</h3>
+        <p>Multi-stage builds, slim against alpine against distroless (and the honest argument about alpine for Python), image scanning as a category, secrets that never touch a layer, and a release checklist. Capstone: Stackyard's container kit, scored.</p>
+        <span class="meta"><span class="pill amber">🔒 final scorecard</span></span>
+      </a>
+    </div>
+
+    <div class="diff-legend">
+      <span><i style="background:#34D399"></i>foundations</span>
+      <span><i style="background:#FBBF24"></i>core</span>
+      <span><i style="background:#FB923C"></i>stretch and bench</span>
+      <span><i style="background:#F87171"></i>capstone</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="paths" style="margin-top:0">
+      <h2>Your passport 🎫</h2>
+      <p class="plede">Clear all three quiz questions in a session and it gets stamped. Six stamps means you can list a project's hidden dependencies, read any Dockerfile as a stack of layers, write one for a Python data project, order it so rebuilds stay fast, run a whole stack with Compose, and ship an image that is small and carries no secrets.</p>
+    </div>
+    <div class="pp-strip"></div>
+  </section>
+
+  <section class="section">
+    <div class="not-this">
+      <h3>What this is not, so you land in the right place 🧭</h3>
+      <table class="clean">
+        <tr><th>If your question is</th><th>Go here instead</th></tr>
+        <tr><td>How do I move around a terminal, pipe commands and write a small shell script?</td><td><a href="https://phoebefu6.github.io/learn-command-line-with-phoebe/">Command Line ↗</a> (the prerequisite)</td></tr>
+        <tr><td>How does Docker fit into a whole data platform with CI, testing and deploys?</td><td><a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/courses/b1-foundations-repo.html">DataOps, builder session 1 ↗</a></td></tr>
+        <tr><td>How do I build and push images to a registry from a CI pipeline?</td><td><a href="https://phoebefu6.github.io/learn-gitlab-with-phoebe/courses/b7-registry-and-templates.html">GitLab, registry and templates ↗</a></td></tr>
+        <tr><td>Where should the container run in the cloud, and how do I describe that infrastructure as code?</td><td><a href="https://phoebefu6.github.io/learn-aws-with-phoebe/">AWS ↗</a> · <a href="https://phoebefu6.github.io/learn-gcp-with-phoebe/">GCP ↗</a> · <a href="https://phoebefu6.github.io/learn-terraform-with-phoebe/">Terraform ↗</a></td></tr>
+        <tr><td>How do I keep credentials away from an AI agent?</td><td><a href="https://phoebefu6.github.io/learn-agent-secrets-access-with-phoebe/">Agent Secrets &amp; Access ↗</a></td></tr>
+        <tr><td><strong>My notebook, API or nightly job only runs on one machine, and I want anyone to run it with one command.</strong></td><td><strong>you are in the right place</strong></td></tr>
+      </table>
+      <p style="margin-top:.7rem;font-size:.86rem;color:var(--muted)"><strong>Docker itself, taught properly.</strong> Kubernetes and cloud container services are one "where next" card in session 6, not a session.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="paths">
+      <h2>Choose your path 🗺️</h2>
+      <p class="plede">Three doors into the same conviction: an environment that lives only in someone's head is a liability, and a Dockerfile is the cheapest way to write it down so a machine can check it.</p>
+      <div class="path"><b>🧪 My notebook only runs on my laptop</b>
+        <a class="pstep" href="courses/01-works-on-my-laptop.html">1</a><span class="parr">→</span>
+        <a class="pstep" href="courses/02-images-containers-layers.html">2</a><span class="parr">→</span>
+        <a class="pstep" href="courses/05-compose-one-command.html">5</a>
+        <span style="font-size:.82rem;color:var(--muted)">write the dependencies down, understand the image, run the notebook beside its database</span>
+      </div>
+      <div class="path"><b>🐢 Our builds take forever</b>
+        <a class="pstep" href="courses/02-images-containers-layers.html">2</a><span class="parr">→</span>
+        <a class="pstep" href="courses/04-the-layer-cache-lab.html">4</a><span class="parr">→</span>
+        <a class="pstep" href="courses/06-smaller-safer-shippable.html">6</a>
+        <span style="font-size:.82rem;color:var(--muted)">see the layers, order them for the cache, then cut the image down</span>
+      </div>
+      <div class="path"><b>🎯 The whole container kit</b>
+        <a class="pstep" href="courses/01-works-on-my-laptop.html">1</a><span class="parr">→</span>
+        <a class="pstep" href="courses/02-images-containers-layers.html">2</a><span class="parr">→</span>
+        <a class="pstep" href="courses/03-a-dockerfile-for-python.html">3</a><span class="parr">→</span>
+        <a class="pstep" href="courses/04-the-layer-cache-lab.html">4</a><span class="parr">→</span>
+        <a class="pstep" href="courses/05-compose-one-command.html">5</a><span class="parr">→</span>
+        <a class="pstep" href="courses/06-smaller-safer-shippable.html">6</a>
+        <span style="font-size:.82rem;color:var(--muted)">from a dependency inventory to an image a stranger can run</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="paths" style="margin-top:0">
+      <h2>What is honest here 🧾</h2>
+      <p class="plede">The lab computes for real; the running case is constructed and labelled; Docker's rules are read at their source and dated, because Docker moves fast.</p>
+    </div>
+    <table class="clean">
+      <tr><th>Claim</th><th>Status</th></tr>
+      <tr><td>Which layers rebuild after a change, the cache hit count and the lint findings</td><td><strong>Really computed</strong> in your browser from the Dockerfile you type, using Docker's documented cache rules; each of the 13 lint rules has a test that fires it and one that passes</td></tr>
+      <tr><td>Base image sizes (python and postgres tags)</td><td><strong>Real,</strong> read from Docker Hub (linux/amd64, compressed) on 2026-11-16; they change, so the pages say "at the time of writing"</td></tr>
+      <tr><td>Python package sizes and which packages ship Alpine wheels</td><td><strong>Real,</strong> read from PyPI on 2026-11-16</td></tr>
+      <tr><td>Every time in seconds, apt and apk package sizes</td><td><strong>Modelled</strong> parameters, printed on the lab; your own builds will differ</td></tr>
+      <tr><td>Stackyard, its laptop, its files and its compose stack</td><td><strong>Constructed</strong> for teaching and labelled on every page; no real company</td></tr>
+      <tr><td>The lint rules</td><td><strong>Modelled on hadolint's</strong> documented rules and cited by id; three rules are the lab's own and say so</td></tr>
+      <tr><td>"Alpine makes Python builds slower"</td><td><strong>Contested,</strong> taught as a disagreement with both sides and the date of each</td></tr>
+    </table>
+  </section>
+
+  <section class="section mm-section">
+    <h2>The knowledge map 🧠</h2>
+    <p class="mm-lede">The whole kit at a glance - hover a session to spotlight its concepts, click any node to jump in.</p>
+    <div class="mm-wrap"><div id="mindmap"></div></div>
+  </section>
+
+  <footer class="pagefoot">
+    <span>learn-docker-containers-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span>Neighbours on the shelf: <a href="https://phoebefu6.github.io/learn-command-line-with-phoebe/">Command Line ↗</a> &nbsp;·&nbsp; <a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/">DataOps ↗</a></span>
+  </footer>
+
+</main>
+
+<script>
+window.MINDMAP_DATA = {
+ "title": "Docker &\nContainers",
+ "centerColor": "#01005E",
+ "sessions": [
+  {
+   "label": "Works on my laptop,\nnowhere else",
+   "href": "courses/01-works-on-my-laptop.html",
+   "color": "#34D399",
+   "concepts": [
+    {
+     "label": "Hidden dependencies",
+     "href": "courses/01-works-on-my-laptop.html"
+    },
+    {
+     "label": "Venv, container, VM",
+     "href": "courses/01-works-on-my-laptop.html"
+    },
+    {
+     "label": "The container kit",
+     "href": "courses/01-works-on-my-laptop.html"
+    }
+   ]
+  },
+  {
+   "label": "Images, containers,\nlayers",
+   "href": "courses/02-images-containers-layers.html",
+   "color": "#34D399",
+   "concepts": [
+    {
+     "label": "Layers are file diffs",
+     "href": "courses/02-images-containers-layers.html"
+    },
+    {
+     "label": "The writable layer",
+     "href": "courses/02-images-containers-layers.html"
+    },
+    {
+     "label": "Tags against digests",
+     "href": "courses/02-images-containers-layers.html"
+    }
+   ]
+  },
+  {
+   "label": "A Dockerfile for\nPython data",
+   "href": "courses/03-a-dockerfile-for-python.html",
+   "color": "#FBBF24",
+   "concepts": [
+    {
+     "label": "Instruction by instruction",
+     "href": "courses/03-a-dockerfile-for-python.html"
+    },
+    {
+     "label": "CMD against ENTRYPOINT",
+     "href": "courses/03-a-dockerfile-for-python.html"
+    },
+    {
+     "label": ".dockerignore and USER",
+     "href": "courses/03-a-dockerfile-for-python.html"
+    }
+   ]
+  },
+  {
+   "label": "The layer\ncache lab",
+   "href": "courses/04-the-layer-cache-lab.html",
+   "color": "#FB923C",
+   "concepts": [
+    {
+     "label": "Docker's cache rules",
+     "href": "courses/04-the-layer-cache-lab.html"
+    },
+    {
+     "label": "The six-rung ladder",
+     "href": "courses/04-the-layer-cache-lab.html"
+    },
+    {
+     "label": "Break it on purpose",
+     "href": "courses/04-the-layer-cache-lab.html"
+    }
+   ]
+  },
+  {
+   "label": "Compose:\none command",
+   "href": "courses/05-compose-one-command.html",
+   "color": "#FB923C",
+   "concepts": [
+    {
+     "label": "Services and networks",
+     "href": "courses/05-compose-one-command.html"
+    },
+    {
+     "label": "Healthchecks, depends_on",
+     "href": "courses/05-compose-one-command.html"
+    },
+    {
+     "label": "Volumes and env files",
+     "href": "courses/05-compose-one-command.html"
+    }
+   ]
+  },
+  {
+   "label": "Smaller, safer,\nshippable",
+   "href": "courses/06-smaller-safer-shippable.html",
+   "color": "#F87171",
+   "concepts": [
+    {
+     "label": "Multi-stage builds",
+     "href": "courses/06-smaller-safer-shippable.html"
+    },
+    {
+     "label": "Slim, alpine, distroless",
+     "href": "courses/06-smaller-safer-shippable.html"
+    },
+    {
+     "label": "No secret in a layer",
+     "href": "courses/06-smaller-safer-shippable.html"
+    }
+   ]
+  }
+ ]
+};
+</script>
+<script src="assets/mindmap.js?v=1"></script>
+<script src="assets/app.js?v=1"></script>
+</body>
+</html>

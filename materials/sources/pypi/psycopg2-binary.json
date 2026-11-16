@@ -1,0 +1,342 @@
+{
+ "name": "psycopg2-binary",
+ "version": "2.9.13",
+ "license": "LGPL with exceptions",
+ "files": [
+  {
+   "filename": "psycopg2_binary-2.9.13-cp310-cp310-macosx_10_9_x86_64.whl",
+   "size": 3725660,
+   "upload_time": "2026-09-09T23:54:05"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp310-cp310-macosx_11_0_arm64.whl",
+   "size": 3817358,
+   "upload_time": "2026-09-09T23:54:07"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp310-cp310-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 4585517,
+   "upload_time": "2026-09-09T23:54:10"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 4281153,
+   "upload_time": "2026-09-09T23:54:12"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp310-cp310-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 5900983,
+   "upload_time": "2026-09-09T23:54:14"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp310-cp310-manylinux_2_38_riscv64.manylinux_2_39_riscv64.whl",
+   "size": 4118632,
+   "upload_time": "2026-09-09T23:54:17"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp310-cp310-musllinux_1_2_aarch64.whl",
+   "size": 3659631,
+   "upload_time": "2026-09-09T23:54:19"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp310-cp310-musllinux_1_2_ppc64le.whl",
+   "size": 3305176,
+   "upload_time": "2026-09-09T23:54:21"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp310-cp310-musllinux_1_2_riscv64.whl",
+   "size": 3051629,
+   "upload_time": "2026-09-09T23:54:23"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp310-cp310-musllinux_1_2_x86_64.whl",
+   "size": 3353122,
+   "upload_time": "2026-09-09T23:54:25"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp310-cp310-win_amd64.whl",
+   "size": 2767600,
+   "upload_time": "2026-09-09T23:54:27"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp311-cp311-macosx_10_9_x86_64.whl",
+   "size": 3725651,
+   "upload_time": "2026-09-09T23:54:29"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp311-cp311-macosx_11_0_arm64.whl",
+   "size": 3817384,
+   "upload_time": "2026-09-09T23:54:31"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp311-cp311-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 4585497,
+   "upload_time": "2026-09-09T23:54:33"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 4281172,
+   "upload_time": "2026-09-09T23:54:35"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 5900973,
+   "upload_time": "2026-09-09T23:54:37"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp311-cp311-manylinux_2_38_riscv64.manylinux_2_39_riscv64.whl",
+   "size": 4118611,
+   "upload_time": "2026-09-09T23:54:39"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp311-cp311-musllinux_1_2_aarch64.whl",
+   "size": 3659643,
+   "upload_time": "2026-09-09T23:54:41"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp311-cp311-musllinux_1_2_ppc64le.whl",
+   "size": 3305145,
+   "upload_time": "2026-09-09T23:54:43"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp311-cp311-musllinux_1_2_riscv64.whl",
+   "size": 3051614,
+   "upload_time": "2026-09-09T23:54:45"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp311-cp311-musllinux_1_2_x86_64.whl",
+   "size": 3353133,
+   "upload_time": "2026-09-09T23:54:47"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp311-cp311-win_amd64.whl",
+   "size": 2771441,
+   "upload_time": "2026-09-09T23:54:49"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp312-cp312-macosx_10_13_x86_64.whl",
+   "size": 3725735,
+   "upload_time": "2026-09-09T23:54:51"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp312-cp312-macosx_11_0_arm64.whl",
+   "size": 3818000,
+   "upload_time": "2026-09-09T23:54:53"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp312-cp312-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 4585760,
+   "upload_time": "2026-09-09T23:54:55"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 4282380,
+   "upload_time": "2026-09-09T23:54:57"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 5902039,
+   "upload_time": "2026-09-09T23:55:01"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp312-cp312-manylinux_2_38_riscv64.manylinux_2_39_riscv64.whl",
+   "size": 4119840,
+   "upload_time": "2026-09-09T23:55:04"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp312-cp312-musllinux_1_2_aarch64.whl",
+   "size": 3661077,
+   "upload_time": "2026-09-09T23:55:06"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp312-cp312-musllinux_1_2_ppc64le.whl",
+   "size": 3307202,
+   "upload_time": "2026-09-09T23:55:08"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp312-cp312-musllinux_1_2_riscv64.whl",
+   "size": 3052893,
+   "upload_time": "2026-09-09T23:55:10"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp312-cp312-musllinux_1_2_x86_64.whl",
+   "size": 3355210,
+   "upload_time": "2026-09-09T23:55:11"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp312-cp312-win_amd64.whl",
+   "size": 2767784,
+   "upload_time": "2026-09-09T23:55:13"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp313-cp313-macosx_10_13_x86_64.whl",
+   "size": 3725723,
+   "upload_time": "2026-09-09T23:55:15"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp313-cp313-macosx_11_0_arm64.whl",
+   "size": 3817976,
+   "upload_time": "2026-09-09T23:55:18"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp313-cp313-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 4585813,
+   "upload_time": "2026-09-09T23:55:20"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 4282438,
+   "upload_time": "2026-09-09T23:55:22"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 5902064,
+   "upload_time": "2026-09-09T23:55:24"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp313-cp313-manylinux_2_38_riscv64.manylinux_2_39_riscv64.whl",
+   "size": 4119848,
+   "upload_time": "2026-09-09T23:55:26"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp313-cp313-musllinux_1_2_aarch64.whl",
+   "size": 3661129,
+   "upload_time": "2026-09-09T23:55:28"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp313-cp313-musllinux_1_2_ppc64le.whl",
+   "size": 3307262,
+   "upload_time": "2026-09-09T23:55:30"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp313-cp313-musllinux_1_2_riscv64.whl",
+   "size": 3052898,
+   "upload_time": "2026-09-09T23:55:32"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp313-cp313-musllinux_1_2_x86_64.whl",
+   "size": 3355265,
+   "upload_time": "2026-09-09T23:55:35"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp313-cp313-win_amd64.whl",
+   "size": 2767914,
+   "upload_time": "2026-09-09T23:55:37"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp314-cp314-macosx_10_15_x86_64.whl",
+   "size": 3725788,
+   "upload_time": "2026-09-09T23:55:39"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp314-cp314-macosx_11_0_arm64.whl",
+   "size": 3818111,
+   "upload_time": "2026-09-09T23:55:40"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp314-cp314-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 4586235,
+   "upload_time": "2026-09-09T23:55:43"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 4282424,
+   "upload_time": "2026-09-09T23:55:44"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp314-cp314-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 5902365,
+   "upload_time": "2026-09-09T23:55:46"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp314-cp314-manylinux_2_38_riscv64.manylinux_2_39_riscv64.whl",
+   "size": 4119938,
+   "upload_time": "2026-09-09T23:55:49"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp314-cp314-musllinux_1_2_aarch64.whl",
+   "size": 3661557,
+   "upload_time": "2026-09-09T23:55:51"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp314-cp314-musllinux_1_2_ppc64le.whl",
+   "size": 3307770,
+   "upload_time": "2026-09-09T23:55:53"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp314-cp314-musllinux_1_2_riscv64.whl",
+   "size": 3052935,
+   "upload_time": "2026-09-09T23:55:55"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp314-cp314-musllinux_1_2_x86_64.whl",
+   "size": 3355387,
+   "upload_time": "2026-09-09T23:55:57"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp314-cp314-win_amd64.whl",
+   "size": 2863890,
+   "upload_time": "2026-09-09T23:55:59"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp315-cp315-macosx_10_15_x86_64.whl",
+   "size": 3725913,
+   "upload_time": "2026-09-09T23:56:00"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp315-cp315-macosx_11_0_arm64.whl",
+   "size": 3818303,
+   "upload_time": "2026-09-09T23:56:02"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp315-cp315-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl",
+   "size": 4586508,
+   "upload_time": "2026-09-09T23:56:04"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp315-cp315-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+   "size": 4282383,
+   "upload_time": "2026-09-09T23:56:06"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp315-cp315-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 5902765,
+   "upload_time": "2026-09-09T23:56:08"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp315-cp315-manylinux_2_38_riscv64.manylinux_2_39_riscv64.whl",
+   "size": 4122849,
+   "upload_time": "2026-09-09T23:56:10"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp315-cp315-musllinux_1_2_aarch64.whl",
+   "size": 3662084,
+   "upload_time": "2026-09-09T23:56:12"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp315-cp315-musllinux_1_2_ppc64le.whl",
+   "size": 3308077,
+   "upload_time": "2026-09-09T23:56:15"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp315-cp315-musllinux_1_2_riscv64.whl",
+   "size": 3055143,
+   "upload_time": "2026-09-09T23:56:17"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp315-cp315-musllinux_1_2_x86_64.whl",
+   "size": 3355374,
+   "upload_time": "2026-09-09T23:56:18"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13-cp315-cp315-win_amd64.whl",
+   "size": 2867246,
+   "upload_time": "2026-09-09T23:56:20"
+  },
+  {
+   "filename": "psycopg2_binary-2.9.13.tar.gz",
+   "size": 378112,
+   "upload_time": "2026-09-10T00:06:12"
+  }
+ ]
+}

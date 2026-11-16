@@ -1,0 +1,312 @@
+{
+ "name": "scipy",
+ "version": "1.18.1",
+ "license": "Copyright (c) 2001-2002 Enthought, Inc. 2003, SciPy Develope",
+ "files": [
+  {
+   "filename": "scipy-1.18.1-cp312-cp312-macosx_10_15_x86_64.whl",
+   "size": 31111061,
+   "upload_time": "2026-08-21T23:23:44"
+  },
+  {
+   "filename": "scipy-1.18.1-cp312-cp312-macosx_12_0_arm64.whl",
+   "size": 28733332,
+   "upload_time": "2026-08-21T23:23:50"
+  },
+  {
+   "filename": "scipy-1.18.1-cp312-cp312-macosx_14_0_arm64.whl",
+   "size": 20475078,
+   "upload_time": "2026-08-21T23:23:54"
+  },
+  {
+   "filename": "scipy-1.18.1-cp312-cp312-macosx_14_0_x86_64.whl",
+   "size": 23108904,
+   "upload_time": "2026-08-21T23:23:57"
+  },
+  {
+   "filename": "scipy-1.18.1-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 34025113,
+   "upload_time": "2026-08-21T23:24:02"
+  },
+  {
+   "filename": "scipy-1.18.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 35344199,
+   "upload_time": "2026-08-21T23:24:07"
+  },
+  {
+   "filename": "scipy-1.18.1-cp312-cp312-musllinux_1_2_aarch64.whl",
+   "size": 35639587,
+   "upload_time": "2026-08-21T23:24:13"
+  },
+  {
+   "filename": "scipy-1.18.1-cp312-cp312-musllinux_1_2_x86_64.whl",
+   "size": 37480330,
+   "upload_time": "2026-08-21T23:24:19"
+  },
+  {
+   "filename": "scipy-1.18.1-cp312-cp312-win_amd64.whl",
+   "size": 36658278,
+   "upload_time": "2026-08-21T23:24:25"
+  },
+  {
+   "filename": "scipy-1.18.1-cp312-cp312-win_arm64.whl",
+   "size": 24400588,
+   "upload_time": "2026-08-21T23:24:30"
+  },
+  {
+   "filename": "scipy-1.18.1-cp313-cp313-macosx_10_15_x86_64.whl",
+   "size": 31089958,
+   "upload_time": "2026-08-21T23:24:35"
+  },
+  {
+   "filename": "scipy-1.18.1-cp313-cp313-macosx_12_0_arm64.whl",
+   "size": 28715106,
+   "upload_time": "2026-08-21T23:24:40"
+  },
+  {
+   "filename": "scipy-1.18.1-cp313-cp313-macosx_14_0_arm64.whl",
+   "size": 20456846,
+   "upload_time": "2026-08-21T23:24:45"
+  },
+  {
+   "filename": "scipy-1.18.1-cp313-cp313-macosx_14_0_x86_64.whl",
+   "size": 23087986,
+   "upload_time": "2026-08-21T23:24:49"
+  },
+  {
+   "filename": "scipy-1.18.1-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 33998146,
+   "upload_time": "2026-08-21T23:24:54"
+  },
+  {
+   "filename": "scipy-1.18.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 35312578,
+   "upload_time": "2026-08-21T23:25:00"
+  },
+  {
+   "filename": "scipy-1.18.1-cp313-cp313-musllinux_1_2_aarch64.whl",
+   "size": 35612621,
+   "upload_time": "2026-08-21T23:25:06"
+  },
+  {
+   "filename": "scipy-1.18.1-cp313-cp313-musllinux_1_2_x86_64.whl",
+   "size": 37457323,
+   "upload_time": "2026-08-21T23:25:12"
+  },
+  {
+   "filename": "scipy-1.18.1-cp313-cp313-win_amd64.whl",
+   "size": 36622841,
+   "upload_time": "2026-08-21T23:25:18"
+  },
+  {
+   "filename": "scipy-1.18.1-cp313-cp313-win_arm64.whl",
+   "size": 24399315,
+   "upload_time": "2026-08-21T23:25:23"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314-macosx_10_15_x86_64.whl",
+   "size": 31090936,
+   "upload_time": "2026-08-21T23:25:28"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314-macosx_12_0_arm64.whl",
+   "size": 28725221,
+   "upload_time": "2026-08-21T23:25:33"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314-macosx_14_0_arm64.whl",
+   "size": 20466839,
+   "upload_time": "2026-08-21T23:25:37"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314-macosx_14_0_x86_64.whl",
+   "size": 23089121,
+   "upload_time": "2026-08-21T23:25:42"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 34053851,
+   "upload_time": "2026-08-21T23:25:47"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 35329183,
+   "upload_time": "2026-08-21T23:25:53"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314-musllinux_1_2_aarch64.whl",
+   "size": 35672551,
+   "upload_time": "2026-08-21T23:25:59"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314-musllinux_1_2_x86_64.whl",
+   "size": 37469416,
+   "upload_time": "2026-08-21T23:26:05"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314t-macosx_10_15_x86_64.whl",
+   "size": 31485550,
+   "upload_time": "2026-08-21T23:26:20"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314t-macosx_12_0_arm64.whl",
+   "size": 29174642,
+   "upload_time": "2026-08-21T23:26:25"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314t-macosx_14_0_arm64.whl",
+   "size": 20916357,
+   "upload_time": "2026-08-21T23:26:30"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314t-macosx_14_0_x86_64.whl",
+   "size": 23482611,
+   "upload_time": "2026-08-21T23:26:34"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314t-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 34143202,
+   "upload_time": "2026-08-21T23:26:40"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 35380876,
+   "upload_time": "2026-08-21T23:26:46"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314t-musllinux_1_2_aarch64.whl",
+   "size": 35770885,
+   "upload_time": "2026-08-21T23:26:51"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314t-musllinux_1_2_x86_64.whl",
+   "size": 37525424,
+   "upload_time": "2026-08-21T23:26:56"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314t-win_amd64.whl",
+   "size": 37416961,
+   "upload_time": "2026-08-21T23:27:01"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314t-win_arm64.whl",
+   "size": 25331848,
+   "upload_time": "2026-08-21T23:27:05"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314-win_amd64.whl",
+   "size": 37362755,
+   "upload_time": "2026-08-21T23:26:11"
+  },
+  {
+   "filename": "scipy-1.18.1-cp314-cp314-win_arm64.whl",
+   "size": 25036090,
+   "upload_time": "2026-08-21T23:26:15"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315-macosx_10_15_x86_64.whl",
+   "size": 31091484,
+   "upload_time": "2026-08-21T23:27:11"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315-macosx_12_0_arm64.whl",
+   "size": 28725057,
+   "upload_time": "2026-08-21T23:27:15"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315-macosx_14_0_arm64.whl",
+   "size": 20466734,
+   "upload_time": "2026-08-21T23:27:20"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315-macosx_14_0_x86_64.whl",
+   "size": 23089664,
+   "upload_time": "2026-08-21T23:27:24"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 34054035,
+   "upload_time": "2026-08-21T23:27:29"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 35333883,
+   "upload_time": "2026-08-21T23:27:34"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315-musllinux_1_2_aarch64.whl",
+   "size": 35673124,
+   "upload_time": "2026-08-21T23:27:39"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315-musllinux_1_2_x86_64.whl",
+   "size": 37470753,
+   "upload_time": "2026-08-21T23:27:44"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315t-macosx_10_15_x86_64.whl",
+   "size": 31474926,
+   "upload_time": "2026-08-21T23:27:57"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315t-macosx_12_0_arm64.whl",
+   "size": 29164940,
+   "upload_time": "2026-08-21T23:28:03"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315t-macosx_14_0_arm64.whl",
+   "size": 20906742,
+   "upload_time": "2026-08-21T23:28:07"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315t-macosx_14_0_x86_64.whl",
+   "size": 23472183,
+   "upload_time": "2026-08-21T23:28:12"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315t-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 34130796,
+   "upload_time": "2026-08-21T23:28:17"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 35374253,
+   "upload_time": "2026-08-21T23:28:23"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315t-musllinux_1_2_aarch64.whl",
+   "size": 35758543,
+   "upload_time": "2026-08-21T23:28:29"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315t-musllinux_1_2_x86_64.whl",
+   "size": 37521946,
+   "upload_time": "2026-08-21T23:28:35"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315t-win_amd64.whl",
+   "size": 37408295,
+   "upload_time": "2026-08-21T23:28:40"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315t-win_arm64.whl",
+   "size": 25319710,
+   "upload_time": "2026-08-21T23:28:45"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315-win_amd64.whl",
+   "size": 37361483,
+   "upload_time": "2026-08-21T23:27:49"
+  },
+  {
+   "filename": "scipy-1.18.1-cp315-cp315-win_arm64.whl",
+   "size": 25035883,
+   "upload_time": "2026-08-21T23:27:53"
+  },
+  {
+   "filename": "scipy-1.18.1.tar.gz",
+   "size": 30781235,
+   "upload_time": "2026-08-21T23:28:50"
+  }
+ ]
+}

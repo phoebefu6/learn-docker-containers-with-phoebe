@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Session 6 of 6. Multi-stage builds that leave the pip cache behind, the slim against alpine against distroless argument for Python with both sides on the table, secrets that never reach a layer, and a release checklist that scores the constructed Stackyard team's whole container kit.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="Smaller, safer, shippable - learn docker containers with phoebe">
+<meta property="og:description" content="Session 6 of 6. Multi-stage builds, slim vs alpine vs distroless for Python (contested, both sides), secrets kept out of every layer, and a release checklist for the whole kit.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/courses/06-smaller-safer-shippable.html">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Smaller, safer, shippable - learn docker containers with phoebe">
+<meta name="twitter:description" content="Session 6 of 6. Multi-stage, base images argued honestly, secrets out of layers, and the release checklist.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Session 6 · Smaller, safer, shippable - learn docker containers with phoebe</title>
+<link rel="stylesheet" href="../assets/style.css?v=1">
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="wrap">
+    <span class="crumb"><a href="../index.html">learn-docker-containers-with-phoebe</a> / Session 6 of 6</span>
+    <button class="btn" id="toggle-all" type="button">Expand all</button>
+    <button class="btn primary" id="zoom-toggle" type="button">Projector zoom: off</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Learn Docker &amp; Containers with Phoebe · Session 6 of 6</div>
+    <h1>Smaller, safer, <span class="accent">shippable</span></h1>
+    <p class="sub">Stackyard now starts with one command. Before anyone else pulls the image, three questions remain: what is in it that does not need to be, which base it should sit on, and whether a secret is hiding in a layer you thought you had cleaned. Tonight we answer all three, write the release checklist that keeps them answered, and score the whole container kit, all six pieces, against the question we started with.</p>
+    <div class="chip-row">
+      <span class="chip level">🔴 Capstone</span>
+      <span class="chip audience">Data, analytics and ML people who ship notebooks, APIs and jobs</span>
+      <span class="chip audience">Builds on sessions 1 to 5</span>
+      <span class="chip time">45 min</span>
+    </div>
+    <div class="agenda">
+      <span class="a1" style="flex:1">0-3 · Welcome</span>
+      <span class="a2" style="flex:4">3-18 · Multi-stage, base images, secrets</span>
+      <span class="a3" style="flex:5">18-40 · Capstone: Stackyard's container kit, scored</span>
+      <span class="a4" style="flex:1">40-45 · Q&amp;A</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="intro">
+    <div class="section-kicker">
+      <span class="klabel">Part 0</span>
+      <h2>Where we start</h2>
+    </div>
+    <p class="lede">Five sessions in, the Constructed Stackyard example has an inventory, a Dockerfile read line by line, an API image measured on the bench and a <code>compose.yaml</code> that stands up the notebook, the API and Postgres. What it does not yet have is a reason to trust the image in someone else's hands. An image is a file you hand to people and machines you will never see, and everything inside it goes with it: the packages it needs, the build tools it no longer needs, and anything secret that slipped in on the way. Tonight is about shipping only the first of those, and proving it with a checklist rather than a feeling.</p>
+
+    <div class="legend">
+      <span class="pill">🎫 Clear all three quiz questions to stamp your passport</span>
+      <span class="pill">Live = presented in the 45 minutes</span>
+      <span class="pill">Self-study = the full depth, after class</span>
+      <span class="pill">★ Build-along = do it yourself, in the page</span>
+    </div>
+
+    <div class="callout win">
+      <p><strong>★ What you walk out with tonight.</strong> Stackyard's shipped API Dockerfile, a ten-row release checklist you can run against any image before it leaves your hands, a scored container kit, and a two-sentence answer to the question from session 1: could a teammate run this tomorrow with one command, and how long would the rebuild take?</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-1">
+    <div class="section-kicker">
+      <span class="klabel">Part 1 · covers multi-stage builds</span>
+      <h2>Build in one stage, ship from another</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">A Dockerfile can have more than one <code>FROM</code>. Each <code>FROM</code> starts a new stage, you name a stage with <code>AS &lt;NAME&gt;</code>, and <code>COPY --from</code> copies files out of one stage into another. Docker's documentation puts the point in one phrase: you copy artifacts across, "leaving behind everything you don't want in the final image". The figure is rung 5 of the session 4 lab, built on the Constructed Stackyard example: what the builder stage holds, and the one copy that crosses into the image you ship.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 412" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rung 5 of the session 4 lab, constructed Stackyard example. Left, the builder stage from python:3.12-slim: base 43.27 MB, WORKDIR 0 MB, COPY requirements.txt 0.01 MB, and one RUN pip install layer of 160.78 MB that holds the installed packages in /install, 80.39 MB, and the pip cache, 80.39 MB. One arrow, COPY --from=builder /install, carries only the installed packages into the final stage. Right, the final stage from python:3.12-slim: base 43.27 MB, WORKDIR 0 MB, the copied packages 80.39 MB, COPY app/ 4.26 MB, and config only. Final image 127.92 MB. For comparison rung 4, a single stage, prints 248.67 MB with its pip layer of 160.78 MB and an apt layer of 40.3 MB inside the image.">
+        <defs>
+          <filter id="s6aSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="61" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s6aHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s6aAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s6aH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s6aL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s6aS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s6aC { font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #0E1030; }
+          .s6aV { font: 800 18px Inter, sans-serif; fill: #01005E; }
+          .s6aW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s6aN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s6aH" x="30" y="24">RUNG 5 IN THE SESSION 4 LAB: TWO STAGES, ONE COPY BETWEEN THEM</text>
+
+        <g filter="url(#s6aSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="36" width="350" height="280" rx="12" transform="rotate(-0.4 205 176)" fill="#FFFFFF"/>
+          <rect x="500" y="36" width="350" height="280" rx="12" transform="rotate(0.4 675 176)" fill="#FFFFFF"/>
+
+          <rect x="44" y="104" width="322" height="32" rx="7" transform="rotate(-0.6 205 120)" fill="#EEF1FD"/>
+          <rect x="44" y="142" width="322" height="32" rx="7" transform="rotate(0.5 205 158)" fill="#FF9F5A"/>
+          <rect x="44" y="186" width="322" height="32" rx="7" transform="rotate(-0.4 205 202)" fill="#FFFFFF"/>
+          <rect x="44" y="226" width="322" height="32" rx="7" transform="rotate(0.4 205 242)" fill="#FFFFFF"/>
+          <rect x="44" y="266" width="322" height="32" rx="7" transform="rotate(-0.3 205 282)" fill="#01005E"/>
+
+          <rect x="514" y="104" width="322" height="32" rx="7" transform="rotate(0.5 675 120)" fill="#FFFFFF"/>
+          <rect x="514" y="142" width="322" height="32" rx="7" transform="rotate(-0.5 675 158)" fill="#FFFFFF"/>
+          <rect x="514" y="186" width="322" height="32" rx="7" transform="rotate(0.4 675 202)" fill="#FF9F5A"/>
+          <rect x="514" y="226" width="322" height="32" rx="7" transform="rotate(-0.4 675 242)" fill="#FFFFFF"/>
+          <rect x="514" y="266" width="322" height="32" rx="7" transform="rotate(0.3 675 282)" fill="#01005E"/>
+
+          <path d="M370 158 C 420 158, 440 202, 494 202" marker-end="url(#s6aAr)"/>
+        </g>
+
+        <text class="s6aH" x="44" y="58">STAGE 1 · builder</text>
+        <text class="s6aC" x="44" y="76">FROM python:3.12-slim AS builder</text>
+        <text class="s6aS" x="44" y="97">one RUN pip install layer: 160.78 MB in all</text>
+
+        <text class="s6aL" x="58" y="124">pip cache, /root/.cache/pip</text>
+        <text class="s6aS" x="352" y="124" text-anchor="end">80.39 MB</text>
+        <text class="s6aL" x="58" y="162">installed packages, /install</text>
+        <text class="s6aL" x="352" y="162" text-anchor="end">80.39 MB</text>
+        <text class="s6aL" x="58" y="206">COPY requirements.txt</text>
+        <text class="s6aS" x="352" y="206" text-anchor="end">0.01 MB</text>
+        <text class="s6aL" x="58" y="246">WORKDIR /build</text>
+        <text class="s6aS" x="352" y="246" text-anchor="end">0 MB</text>
+        <text class="s6aW" x="58" y="286">FROM python:3.12-slim</text>
+        <text class="s6aW" x="352" y="286" text-anchor="end">43.27 MB</text>
+
+        <text class="s6aC" x="440" y="112" text-anchor="middle">COPY</text>
+        <text class="s6aC" x="440" y="126" text-anchor="middle">--from=builder</text>
+        <text class="s6aC" x="440" y="140" text-anchor="middle">/install</text>
+
+        <text class="s6aH" x="514" y="58">STAGE 2 · final image</text>
+        <text class="s6aC" x="514" y="76">FROM python:3.12-slim</text>
+        <text class="s6aS" x="514" y="97">what ships: only these layers</text>
+
+        <text class="s6aL" x="528" y="124">ENV, EXPOSE, CMD: config only</text>
+        <text class="s6aS" x="822" y="124" text-anchor="end">0 MB</text>
+        <text class="s6aL" x="528" y="162">COPY app/ ./app/ (4 files)</text>
+        <text class="s6aS" x="822" y="162" text-anchor="end">4.26 MB</text>
+        <text class="s6aL" x="528" y="206">COPY --from=builder /install</text>
+        <text class="s6aL" x="822" y="206" text-anchor="end">80.39 MB</text>
+        <text class="s6aL" x="528" y="246">WORKDIR /app</text>
+        <text class="s6aS" x="822" y="246" text-anchor="end">0 MB</text>
+        <text class="s6aW" x="528" y="286">FROM python:3.12-slim</text>
+        <text class="s6aW" x="822" y="286" text-anchor="end">43.27 MB</text>
+
+        <text class="s6aS" x="44" y="338">stays in the builder: never reaches the image</text>
+        <text class="s6aV" x="514" y="342">127.92 MB</text>
+        <text class="s6aS" x="618" y="341">final image, rung 5</text>
+
+        <text class="s6aN" x="30" y="374">Rung 4, one stage, same lab: 248.67 MB, with its 160.78 MB pip layer and a 40.3 MB apt layer inside the image.</text>
+        <text class="s6aN" x="30" y="396">Constructed Stackyard example. Sizes as the session 4 lab prints them: compressed base plus layers, approximate.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - the builder keeps its pip cache; one COPY --from carries only the installed packages into the image</figcaption>
+    </figure>
+
+    <details class="card" open>
+      <summary><span class="mode live">Live</span>What stays behind in the builder<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>Rung 4, one stage.</strong> In the session 4 lab, the pinned slim Dockerfile prints a 248.67 MB image. Two layers carry weight it does not need at run time: the <code>apt-get install curl</code> layer at 40.3 MB, with the apt lists left inside it, and the <code>pip install</code> layer at 160.78 MB, which is 80.39 MB of installed packages plus 80.39 MB of pip's download cache. Both are frozen into the image, because a layer keeps every byte it wrote.</p>
+        <p><strong>Rung 5, two stages.</strong> The install moves into a stage named <code>builder</code>, with <code>--prefix=/install</code> so the installed packages land in one folder. The final stage starts again from <code>python:3.12-slim</code> and copies just that folder with <code>COPY --from=builder /install /usr/local</code>, then copies only <code>app/</code>. The lab prints the final stage as base 43.27 MB, plus 80.39 MB of packages, plus 4.26 MB of app code: 127.92 MB. The pip cache, the requirements file and the builder's working folder are still in the builder, which nobody ships.</p>
+        <p><strong>What the builder costs you.</strong> Nothing at run time, a little at build time: BuildKit builds the builder stage as part of the build, and the cache rules from session 4 still hold inside each stage. Docker's documentation adds one useful detail: "BuildKit only builds the stages that the target stage depends on." A stage nothing copies from is skipped. Rung 6 then adds <code>--no-cache-dir</code>, which shrinks the builder's pip layer to 80.39 MB as well; the shipped image barely moves (127.93 MB, one small <code>useradd</code> layer more), because the cache never reached it anyway.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Multi-stage when you need compilers<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>The python image's documentation describes the slim variant as "only the minimal Debian packages needed to run python": the toolchain for compiling extension modules is not there. Stackyard never needs it, because at the time of writing every one of its fourteen packages ships a ready-built wheel for Python 3.12 (a manylinux wheel, or a pure-Python one). Add a package with no wheel for your platform and <code>pip install</code> on slim fails trying to compile.</p>
+        <p>Multi-stage turns that into a clean trade. Install the compilers in the builder, build there, and copy only the result. The final stage never sees the compilers, so they cost the shipped image nothing. A sketch of the shape, if you have Docker:</p>
+        <div class="prompt-box good"><span class="label">★ The shape: compilers in the builder only (sketch)</span>FROM python:3.12-slim AS builder
+RUN apt-get update &amp;&amp; apt-get install -y --no-install-recommends build-essential \
+ &amp;&amp; rm -rf /var/lib/apt/lists/*
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.12-slim
+COPY --from=builder /install /usr/local
+# no build-essential here: the final stage never installed it</div>
+        <p>One caution: anything compiled in the builder that links to a system library at run time still needs that library in the final stage. If the final image fails on import with a missing <code>.so</code> file, install the run-time library (not the compiler) in the final stage.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>The documentation's own definition of the win.</strong> Docker's "Multi-stage builds" page describes the pattern as copying artifacts from one stage to another, "leaving behind everything you don't want in the final image". In the session 4 lab that sentence is the difference between 248.67 MB and 127.92 MB for the same fourteen packages and the same four app files, with no change to a single line of Python.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-2">
+    <div class="section-kicker">
+      <span class="klabel">Part 2 · covers slim, alpine and distroless</span>
+      <h2>Which base: slim, alpine or distroless</h2>
+      <span class="tag concept">6 min live</span>
+    </div>
+    <p class="lede">The base image is the biggest single choice in the Dockerfile, and for Python it is a genuine argument among experienced people, not a solved question. Below are the three common answers, what each one contains, and what the evidence says, with its dates. The Constructed Stackyard example sits in the bottom row of the figure, because the answer depends on your packages, not on the base alone.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 384" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three bases side by side. python:3.12-slim: glibc on Debian 13, has a shell, apt package manager, 43.27 MB compressed at the time of writing, and every Stackyard package has a glibc wheel. python:3.12-alpine: musl libc, has a shell, apk package manager, 18.05 MB compressed, and scikit-learn has no musllinux wheel. Distroless python3-debian13: glibc on Debian 13, no shell except in debug tags which add busybox, no package manager so no pip in the image, size not measured here, and no shell to docker exec into. In the session 4 lab, modelled, the alpine side road takes 459.5 seconds to build and prints 302.62 MB, against rung 6 on slim at 36.9 seconds and 127.93 MB.">
+        <defs>
+          <filter id="s6bSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="67" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s6bHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s6bAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s6bH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s6bL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s6bS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s6bW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s6bX { font: 400 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #FFFFFF; }
+          .s6bN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+          .s6bK { font: 400 11px Inter, sans-serif; fill: #0E1030; }
+        </style>
+
+        <text class="s6bH" x="30" y="24">THREE BASES FOR STACKYARD'S API, SIDE BY SIDE</text>
+
+        <g filter="url(#s6bSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="36" width="260" height="44" rx="10" transform="rotate(-0.6 160 58)" fill="#01005E"/>
+          <rect x="310" y="36" width="260" height="44" rx="10" transform="rotate(0.5 440 58)" fill="#01005E"/>
+          <rect x="590" y="36" width="260" height="44" rx="10" transform="rotate(-0.4 720 58)" fill="#01005E"/>
+
+          <rect x="30" y="90" width="260" height="40" rx="8" transform="rotate(0.4 160 110)" fill="#FFFFFF"/>
+          <rect x="30" y="136" width="260" height="40" rx="8" transform="rotate(-0.4 160 156)" fill="#FFFFFF"/>
+          <rect x="30" y="182" width="260" height="40" rx="8" transform="rotate(0.3 160 202)" fill="#FFFFFF"/>
+          <rect x="30" y="228" width="260" height="40" rx="8" transform="rotate(-0.3 160 248)" fill="#EEF1FD"/>
+          <rect x="30" y="274" width="260" height="40" rx="8" transform="rotate(0.4 160 294)" fill="#FFFFFF"/>
+
+          <rect x="310" y="90" width="260" height="40" rx="8" transform="rotate(-0.4 440 110)" fill="#FFFFFF"/>
+          <rect x="310" y="136" width="260" height="40" rx="8" transform="rotate(0.4 440 156)" fill="#FFFFFF"/>
+          <rect x="310" y="182" width="260" height="40" rx="8" transform="rotate(-0.3 440 202)" fill="#FFFFFF"/>
+          <rect x="310" y="228" width="260" height="40" rx="8" transform="rotate(0.3 440 248)" fill="#EEF1FD"/>
+          <rect x="310" y="274" width="260" height="40" rx="8" transform="rotate(-0.5 440 294)" fill="#FF9F5A"/>
+
+          <rect x="590" y="90" width="260" height="40" rx="8" transform="rotate(0.3 720 110)" fill="#FFFFFF"/>
+          <rect x="590" y="136" width="260" height="40" rx="8" transform="rotate(-0.4 720 156)" fill="#FFFFFF"/>
+          <rect x="590" y="182" width="260" height="40" rx="8" transform="rotate(0.4 720 202)" fill="#FFFFFF"/>
+          <rect x="590" y="228" width="260" height="40" rx="8" transform="rotate(-0.3 720 248)" fill="#EEF1FD"/>
+          <rect x="590" y="274" width="260" height="40" rx="8" transform="rotate(0.3 720 294)" fill="#FFFFFF"/>
+        </g>
+
+        <text class="s6bW" x="160" y="55" text-anchor="middle">SLIM</text>
+        <text class="s6bX" x="160" y="71" text-anchor="middle">python:3.12-slim</text>
+        <text class="s6bW" x="440" y="55" text-anchor="middle">ALPINE</text>
+        <text class="s6bX" x="440" y="71" text-anchor="middle">python:3.12-alpine</text>
+        <text class="s6bW" x="720" y="55" text-anchor="middle">DISTROLESS</text>
+        <text class="s6bX" x="720" y="71" text-anchor="middle">python3-debian13</text>
+
+        <text class="s6bS" x="42" y="106">C library (libc)</text>
+        <text class="s6bL" x="42" y="122">glibc (Debian 13)</text>
+        <text class="s6bS" x="42" y="152">shell</text>
+        <text class="s6bL" x="42" y="168">yes</text>
+        <text class="s6bS" x="42" y="198">package manager</text>
+        <text class="s6bL" x="42" y="214">apt</text>
+        <text class="s6bS" x="42" y="244">base, compressed</text>
+        <text class="s6bL" x="42" y="260">43.27 MB</text>
+        <text class="s6bS" x="42" y="290">for Stackyard</text>
+        <text class="s6bL" x="42" y="306">every package ships a wheel</text>
+
+        <text class="s6bS" x="322" y="106">C library (libc)</text>
+        <text class="s6bL" x="322" y="122">musl</text>
+        <text class="s6bS" x="322" y="152">shell</text>
+        <text class="s6bL" x="322" y="168">yes</text>
+        <text class="s6bS" x="322" y="198">package manager</text>
+        <text class="s6bL" x="322" y="214">apk</text>
+        <text class="s6bS" x="322" y="244">base, compressed</text>
+        <text class="s6bL" x="322" y="260">18.05 MB</text>
+        <text class="s6bK" x="322" y="290">for Stackyard</text>
+        <text class="s6bL" x="322" y="306">scikit-learn: no musllinux wheel</text>
+
+        <text class="s6bS" x="602" y="106">C library (libc)</text>
+        <text class="s6bL" x="602" y="122">glibc (Debian 13)</text>
+        <text class="s6bS" x="602" y="152">shell</text>
+        <text class="s6bL" x="602" y="168">none; :debug tags add busybox</text>
+        <text class="s6bS" x="602" y="198">package manager</text>
+        <text class="s6bL" x="602" y="214">none, so no pip in the image</text>
+        <text class="s6bS" x="602" y="244">base, compressed</text>
+        <text class="s6bL" x="602" y="260">not measured here</text>
+        <text class="s6bS" x="602" y="290">for Stackyard</text>
+        <text class="s6bL" x="602" y="306">no shell to docker exec into</text>
+
+        <text class="s6bN" x="30" y="346">Session 4 lab, modelled: alpine side road 459.5 s first build, 302.62 MB; rung 6 on slim 36.9 s, 127.93 MB.</text>
+        <text class="s6bN" x="30" y="368">Sizes compressed, as Docker Hub lists them, at the time of writing. Constructed Stackyard example.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - the smallest base is not the smallest image when one package has to compile</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Check your own wheels before you choose<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>The fact underneath the argument.</strong> The official alpine variant uses musl as its C library, not glibc, and the python image's documentation warns that "software will often run into issues depending on the depth of their libc requirements/assumptions". For Python the practical question is wheels. A manylinux wheel is built against glibc and cannot be used on musl. PEP 656, now Final, defines the <code>musllinux</code> platform tag so projects can publish wheels built for musl-based distributions such as Alpine. If every package you need publishes a musllinux wheel for your Python and your processor, pip installs ready-built files on alpine. If one does not, pip compiles it from source, and you need a compiler in the image to do it.</p>
+        <p><strong>Stackyard, checked on PyPI at the time of writing.</strong> numpy, pandas, scipy, pydantic-core and psycopg2-binary all publish musllinux wheels for CPython 3.12 on x86_64. scikit-learn 1.9.1 publishes manylinux, macOS and Windows wheels, and no musllinux wheel. So on alpine, pip builds scikit-learn from source. The session 4 lab models exactly that on its alpine side road: <code>apk add build-base</code> to get a compiler (modelled at 196 MB), and a modelled 420 s to compile. It prints a first build of 459.5 s, a rebuild after a requirements change of 454.9 s, and a 302.62 MB image, against rung 6 on slim at 36.9 s, 35.3 s and 127.93 MB. The 18.05 MB base did not survive contact with one missing wheel.</p>
+        <p><strong>The one-minute check, for your own project.</strong> For each package in your requirements file, look at the release's file list and search for a filename containing both your Python tag (<code>cp312</code>) and <code>musllinux</code>. On the PyPI website that is the "Download files" list. Or, with Python on any machine (your output will differ, and an empty list means no musllinux wheel for that version):</p>
+        <div class="prompt-box good"><span class="label">★ Does this release ship a musllinux wheel for Python 3.12?</span>python3 -c "import json, urllib.request as u; d = json.load(u.urlopen('https://pypi.org/pypi/scikit-learn/1.9.1/json')); print([f['filename'] for f in d['urls'] if 'musllinux' in f['filename'] and 'cp312' in f['filename']])"</div>
+        <p>Run it for every pinned package, not only the famous ones. The answer is a property of your exact list on the day you check, which is why the same team can reasonably choose alpine one year and slim the next.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>The case for and against alpine, by date<span class="mini">4 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>Against, 2020 (reported).</strong> Itamar Turner-Trauring's article "Using Alpine can make Python Docker builds 50x slower" on pythonspeed.com, first published 2020-01-29, reports his own test: a build that took about 1,557 s on Alpine against about 30 s on Debian slim, and an Alpine image that came out larger, 851 MB against 363 MB. The cause was the one above: packages with no musl wheel at the time, compiled from source, with the compilers left in the image.</p>
+        <p><strong>The standard that changed the picture.</strong> PEP 656 defined the <code>musllinux</code> wheel tag, and it is now Final. Projects started publishing musl wheels alongside their manylinux ones. At the time of writing, most of Stackyard's heavy packages do.</p>
+        <p><strong>Softer, 2026 (reported).</strong> The same author updated the article on 2026-01-30. He writes that musllinux wheels make Alpine "much less of a problem these days", and in the same update says he remains "personally wary of using musl". Both statements come from the same person, a few lines apart, and both are fair: the wheel gap has mostly closed, and musl still behaves differently from glibc in places your tests may not reach.</p>
+        <p><strong>For distroless.</strong> The distroless images contain "only your application and its runtime dependencies", with no package manager and no shell. The static base, <code>static-debian13</code>, is "around 2 MiB" by the project's own account, and a <code>python3-debian13</code> image is published. The trade-off is operational: no shell means nothing to <code>docker exec</code> into when something goes wrong at 2 a.m., and no pip means every package arrives through a <code>COPY --from</code> out of a builder stage. The <code>:debug</code> tags add a busybox shell for exactly that moment. No size is quoted here for the Python image: it was not measured.</p>
+        <p><strong>Where that leaves you.</strong> Not with a winner. Slim is the default the session 4 lab measured and every Stackyard package installs on it from wheels. Alpine is smaller as a base and can be a fine choice when your exact package list has musllinux wheels and your tests run on it. Distroless removes the most and asks the most of your debugging habits. Check your packages, write the reason in the Dockerfile as a comment, and revisit it when the list changes.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>One author, two dates, both honest.</strong> In 2020, Itamar Turner-Trauring reported an Alpine build of about 1,557 s against about 30 s on Debian slim, with the Alpine image larger at 851 MB against 363 MB (reported, his own test). In his 2026 update to the same pythonspeed article, he writes that musllinux wheels make Alpine "much less of a problem these days", while staying "personally wary of using musl". The evidence moved; the caution did not disappear. Your packages decide which of his two sentences applies to you.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-3">
+    <div class="section-kicker">
+      <span class="klabel">Part 3 · covers secrets in layers and scanning</span>
+      <h2>Secrets never reach a layer</h2>
+      <span class="tag concept">4 min live</span>
+    </div>
+    <p class="lede">An image is a stack of layers, and session 2 showed that each layer records a set of filesystem changes: additions, deletions, modifications. A deletion is a change recorded on top; it does not reach back and erase the bytes underneath. That one fact decides how secrets have to be handled. The figure is the Constructed Stackyard example's naive Dockerfile with a tempting fix added, beside the mechanism that actually keeps a secret out.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 404" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Left, a constructed tempting fix: five layers. Layer 1 FROM python:latest, layer 2 WORKDIR /app, layer 3 COPY . . which brings .env into the image, layer 4 RUN pip install, layer 5 RUN rm .env, which hides the file from view. The bytes of .env stay in layer 3 and are still readable by anyone who pulls the image and unpacks that layer. Right, a build secret: docker build --secret passes a secret that is mounted as a file only for one RUN with --mount=type=secret, and the layer that RUN writes holds the packages only. At run time the password arrives from .env through Compose or from a file through POSTGRES_PASSWORD_FILE.">
+        <defs>
+          <filter id="s6cSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="73" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s6cHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s6cAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s6cH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s6cL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s6cS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s6cC { font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #0E1030; }
+          .s6cW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s6cR { font: 800 12px Inter, sans-serif; fill: #991B1B; }
+          .s6cN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s6cH" x="30" y="24">WHERE THE SECRET SITS: A DELETED FILE AGAINST A BUILD SECRET</text>
+
+        <g filter="url(#s6cSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="36" width="380" height="306" rx="12" transform="rotate(-0.4 220 189)" fill="#FFFFFF"/>
+          <rect x="470" y="36" width="380" height="306" rx="12" transform="rotate(0.4 660 189)" fill="#FFFFFF"/>
+
+          <rect x="44" y="84" width="352" height="34" rx="7" transform="rotate(0.5 220 101)" fill="#EEF1FD"/>
+          <rect x="44" y="126" width="352" height="34" rx="7" transform="rotate(-0.4 220 143)" fill="#FFFFFF"/>
+          <rect x="44" y="168" width="352" height="34" rx="7" transform="rotate(0.3 220 185)" fill="#FEF2F2" stroke="#991B1B"/>
+          <rect x="44" y="210" width="352" height="34" rx="7" transform="rotate(-0.3 220 227)" fill="#FFFFFF"/>
+          <rect x="44" y="252" width="352" height="34" rx="7" transform="rotate(0.4 220 269)" fill="#01005E"/>
+
+          <rect x="484" y="84" width="352" height="34" rx="7" transform="rotate(-0.4 660 101)" fill="#FFFFFF"/>
+          <path d="M660 120 L660 140" marker-end="url(#s6cAr)"/>
+          <rect x="484" y="144" width="352" height="70" rx="9" transform="rotate(0.3 660 179)" fill="#EEF1FD"/>
+          <rect x="498" y="176" width="324" height="28" rx="14" transform="rotate(-0.5 660 190)" fill="#FF9F5A"/>
+          <path d="M660 216 L660 236" marker-end="url(#s6cAr)"/>
+          <rect x="484" y="240" width="352" height="34" rx="7" transform="rotate(-0.3 660 257)" fill="#FFFFFF"/>
+        </g>
+
+        <text class="s6cH" x="44" y="56">A tempting fix: COPY, then rm (constructed)</text>
+        <text class="s6cS" x="44" y="74">each row is a layer; later rows sit on top</text>
+
+        <text class="s6cL" x="58" y="105">5 · RUN rm .env</text>
+        <text class="s6cS" x="382" y="105" text-anchor="end">hides it from view</text>
+        <text class="s6cL" x="58" y="147">4 · RUN pip install -r requirements.txt</text>
+        <text class="s6cL" x="58" y="189">3 · COPY . . brings .env in</text>
+        <text class="s6cR" x="382" y="189" text-anchor="end">still readable</text>
+        <text class="s6cL" x="58" y="231">2 · WORKDIR /app</text>
+        <text class="s6cW" x="58" y="273">1 · FROM python:latest</text>
+
+        <text class="s6cS" x="44" y="310">Pull the image, unpack layer 3: .env is still there.</text>
+        <text class="s6cS" x="44" y="328">Layer 5 only records a deletion on top of it.</text>
+
+        <text class="s6cH" x="484" y="56">The build secret: mounted for one RUN</text>
+        <text class="s6cS" x="484" y="74">nothing about the secret is written to a layer</text>
+
+        <text class="s6cC" x="498" y="105">docker build --secret id=tok,src=tok.txt .</text>
+        <text class="s6cC" x="498" y="165">RUN --mount=type=secret,id=tok pip install</text>
+        <text class="s6cL" x="660" y="195" text-anchor="middle">secret file: mounted for this RUN only</text>
+        <text class="s6cL" x="498" y="261">the layer this RUN writes: packages only</text>
+
+        <text class="s6cS" x="484" y="310">At run time: .env via Compose, or a file</text>
+        <text class="s6cS" x="484" y="328">via POSTGRES_PASSWORD_FILE (session 5).</text>
+
+        <text class="s6cN" x="30" y="370">Constructed Stackyard example. Layer 3 is the lab's naive rung: .env is copied into the final image.</text>
+        <text class="s6cN" x="30" y="392">The rm in layer 5 is a constructed fix to show why it fails; the token on the right is illustrative.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - deleting a file in a later layer hides it; the bytes stay in the layer that copied it in</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Three ways a secret gets into an image<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>1 · Copied in with the project.</strong> The naive rung in the session 4 lab copies the whole folder with <code>COPY . .</code> and no <code>.dockerignore</code>, and the lab prints the consequence in red: ".env is copied into the final image". Adding <code>RUN rm .env</code> later does not help. The file disappears from the container's view, but layer 3 still holds its bytes, and anyone who can pull the image can unpack that layer. The fix is to keep it out of the build context in the first place: <code>.env</code> in <code>.dockerignore</code>, which the standard <code>.dockerignore</code> from session 3 already does.</p>
+        <p><strong>2 · Written into ENV or ARG.</strong> Rungs 1 to 5 of the lab carry <code>ENV DB_PASSWORD=stackyard-dev-123</code>, and the lab's lint flags it as DL3064, modelled on hadolint's rule: "Potentially sensitive data should not be used in the ARG or ENV commands". An ENV value is not in a file layer; it is in the image configuration, which is just as readable, and every container started from the image inherits it. Docker's "Build secrets" page is direct: "Build arguments and environment variables are inappropriate for passing secrets to your build" because "they persist in the final image". Rung 6 removes the line entirely.</p>
+        <p><strong>3 · Needed during a build step.</strong> Sometimes a build genuinely needs a secret, for example a token for a private package index. The right tool is a build secret: <code>docker build --secret id=...,src=...</code> passes it in, and <code>RUN --mount=type=secret,id=...</code> exposes it to that one RUN only. It is never written to the layer the RUN produces. Stackyard's API does not need one: its packages come from public PyPI.</p>
+        <p><strong>And at run time.</strong> The password the running API and database need arrives when the container starts, never when the image is built: from <code>.env</code> through Compose's <code>env_file</code>, as session 5 set up (where <code>DB_PASSWORD</code> became <code>POSTGRES_PASSWORD</code>), or from a file, as the postgres image allows with <code>POSTGRES_PASSWORD_FILE</code>. Secrets used by AI agents and tools are their own subject, taught in <a href="https://phoebefu6.github.io/learn-agent-secrets-access-with-phoebe/courses/04-keep-the-key-out.html">Agent Secrets, session 4</a>.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Scanning, as a category<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>An image scanner reads the packages installed in each layer (the operating system's packages, and often the language packages too) and compares their names and versions with lists of known vulnerabilities. It reports what it finds by package and version. Several free and commercial tools do this, some built into registries and CI platforms; which one your organisation uses is a decision for whoever owns your pipeline, and the category matters more than the brand.</p>
+        <p>Two consequences for a data team. First, a smaller image gives a scanner less to report on: every package you leave in the builder is a package nobody has to triage. The distroless project makes the same argument for its images, that a smaller runtime "improves the signal to noise of scanners (e.g. CVE)". Second, a scanner reports packages, not intent: it cannot tell you that a <code>.env</code> file sits in layer 3, so it does not replace the checklist row that says no secret in any layer.</p>
+        <p>Pinning interacts with scanning too. A digest-pinned base never changes until you change it, so security fixes to the base arrive only when someone updates the line. That is why the release checklist pairs the pin with a review date.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>The documentation says it in one line.</strong> Docker's "Build secrets" page: "Build arguments and environment variables are inappropriate for passing secrets to your build," because "they persist in the final image". The recommended path is the secret mount, which exposes the secret to one RUN instruction and nothing else. Every ENV password in rungs 1 to 5 of the session 4 lab is the thing that sentence warns about.</p>
+    </div>
+  </section>
+
+  <section class="section" id="demo-1">
+    <div class="section-kicker">
+      <span class="klabel">Build-along</span>
+      <h2>Stackyard's container kit, scored</h2>
+      <span class="tag demo">★ 22 min · everyone builds</span>
+    </div>
+    <p class="lede">The capstone, on the Constructed Stackyard example. You take rung 6 from the session 4 lab as the shipped API image, write the release checklist it has to pass, score the six pieces of Stackyard's container kit as honestly as session 1 scored the inventory, and then answer the question from the first session in two sentences. Everything runs in the page; if you have Docker, each step also works on your own project.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 442" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Six pieces of Stackyard's container kit, sessions 1 to 6: the dependency inventory, the annotated Dockerfile read, the API Dockerfile with .dockerignore and pinned requirements, rung 6 measured, compose.yaml with .env.example, and tonight's checklist. All six feed one release gate for the API image. The gate's ten rows, each marked done in the reference kit: base pinned with a review date, every package pinned, .dockerignore excludes .env, .git, .venv and data, no secret in ENV, ARG or any layer, USER is non-root, lint clean with 0 findings on the lab's 13 rules, CMD in exec form, image size recorded at 127.93 MB, code-change rebuild recorded at 0.5 seconds modelled, and compose up works from a clean clone with only .env filled.">
+        <defs>
+          <filter id="s6dSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="79" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s6dHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s6dAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s6dH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s6dL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s6dS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s6dA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s6dW { font: 800 13px Inter, sans-serif; fill: #FFFFFF; }
+          .s6dN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s6dH" x="30" y="24">SIX PIECES, ONE RELEASE GATE</text>
+
+        <g filter="url(#s6dSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="36" width="126" height="70" rx="10" transform="rotate(-0.8 93 71)" fill="#FFFFFF"/>
+          <rect x="170" y="36" width="126" height="70" rx="10" transform="rotate(0.6 233 71)" fill="#FFFFFF"/>
+          <rect x="310" y="36" width="126" height="70" rx="10" transform="rotate(-0.5 373 71)" fill="#FFFFFF"/>
+          <rect x="450" y="36" width="126" height="70" rx="10" transform="rotate(0.7 513 71)" fill="#EEF1FD"/>
+          <rect x="590" y="36" width="126" height="70" rx="10" transform="rotate(-0.6 653 71)" fill="#FFFFFF"/>
+          <rect x="730" y="36" width="126" height="70" rx="10" transform="rotate(0.5 793 71)" fill="#FF9F5A"/>
+
+          <path d="M93 110 C 110 130, 250 136, 300 142" marker-end="url(#s6dAr)"/>
+          <path d="M233 110 C 245 126, 320 134, 360 142" marker-end="url(#s6dAr)"/>
+          <path d="M373 110 L 410 142" marker-end="url(#s6dAr)"/>
+          <path d="M513 110 L 470 142" marker-end="url(#s6dAr)"/>
+          <path d="M653 110 C 635 126, 560 134, 520 142" marker-end="url(#s6dAr)"/>
+          <path d="M793 110 C 776 130, 630 136, 580 142" marker-end="url(#s6dAr)"/>
+
+          <rect x="230" y="146" width="420" height="44" rx="12" transform="rotate(-0.4 440 168)" fill="#01005E"/>
+          <rect x="30" y="204" width="820" height="200" rx="12" transform="rotate(0.2 440 304)" fill="#FFFFFF"/>
+
+          <rect x="46" y="222" width="48" height="22" rx="11" fill="#EEF1FD"/>
+          <rect x="46" y="258" width="48" height="22" rx="11" fill="#EEF1FD"/>
+          <rect x="46" y="294" width="48" height="22" rx="11" fill="#EEF1FD"/>
+          <rect x="46" y="330" width="48" height="22" rx="11" fill="#EEF1FD"/>
+          <rect x="46" y="366" width="48" height="22" rx="11" fill="#EEF1FD"/>
+          <rect x="456" y="222" width="48" height="22" rx="11" fill="#EEF1FD"/>
+          <rect x="456" y="258" width="48" height="22" rx="11" fill="#EEF1FD"/>
+          <rect x="456" y="294" width="48" height="22" rx="11" fill="#EEF1FD"/>
+          <rect x="456" y="330" width="48" height="22" rx="11" fill="#EEF1FD"/>
+          <rect x="456" y="366" width="48" height="22" rx="11" fill="#EEF1FD"/>
+        </g>
+
+        <text class="s6dA" x="93" y="56" text-anchor="middle">SESSION 1</text>
+        <text class="s6dH" x="93" y="76" text-anchor="middle">Dependency</text>
+        <text class="s6dS" x="93" y="92" text-anchor="middle">inventory</text>
+        <text class="s6dA" x="233" y="56" text-anchor="middle">SESSION 2</text>
+        <text class="s6dH" x="233" y="76" text-anchor="middle">Dockerfile read</text>
+        <text class="s6dS" x="233" y="92" text-anchor="middle">layers predicted</text>
+        <text class="s6dA" x="373" y="56" text-anchor="middle">SESSION 3</text>
+        <text class="s6dH" x="373" y="76" text-anchor="middle">API Dockerfile</text>
+        <text class="s6dS" x="373" y="92" text-anchor="middle">ignore file, pins</text>
+        <text class="s6dA" x="513" y="56" text-anchor="middle">SESSION 4</text>
+        <text class="s6dH" x="513" y="76" text-anchor="middle">Rung 6,</text>
+        <text class="s6dS" x="513" y="92" text-anchor="middle">measured</text>
+        <text class="s6dA" x="653" y="56" text-anchor="middle">SESSION 5</text>
+        <text class="s6dH" x="653" y="76" text-anchor="middle">compose.yaml</text>
+        <text class="s6dS" x="653" y="92" text-anchor="middle">.env.example</text>
+        <text class="s6dH" x="793" y="56" text-anchor="middle">SESSION 6</text>
+        <text class="s6dH" x="793" y="76" text-anchor="middle">Release</text>
+        <text class="s6dL" x="793" y="92" text-anchor="middle">checklist</text>
+
+        <text class="s6dW" x="440" y="173" text-anchor="middle">RELEASE GATE: STACKYARD'S API IMAGE</text>
+
+        <text class="s6dA" x="70" y="237" text-anchor="middle">done</text>
+        <text class="s6dL" x="106" y="237">Base pinned (tag or digest), review date set</text>
+        <text class="s6dA" x="70" y="273" text-anchor="middle">done</text>
+        <text class="s6dL" x="106" y="273">Every package pinned, all fourteen</text>
+        <text class="s6dA" x="70" y="309" text-anchor="middle">done</text>
+        <text class="s6dL" x="106" y="309">.dockerignore: .env, .git, .venv, data/</text>
+        <text class="s6dA" x="70" y="345" text-anchor="middle">done</text>
+        <text class="s6dL" x="106" y="345">No secret in ENV, ARG or any layer</text>
+        <text class="s6dA" x="70" y="381" text-anchor="middle">done</text>
+        <text class="s6dL" x="106" y="381">USER is non-root (stackyard, uid 10001)</text>
+
+        <text class="s6dA" x="480" y="237" text-anchor="middle">done</text>
+        <text class="s6dL" x="516" y="237">Lint clean: 13 lab rules, 0 findings</text>
+        <text class="s6dA" x="480" y="273" text-anchor="middle">done</text>
+        <text class="s6dL" x="516" y="273">CMD in exec form</text>
+        <text class="s6dA" x="480" y="309" text-anchor="middle">done</text>
+        <text class="s6dL" x="516" y="309">Image size recorded: 127.93 MB (lab)</text>
+        <text class="s6dA" x="480" y="345" text-anchor="middle">done</text>
+        <text class="s6dL" x="516" y="345">Code-change rebuild: 0.5 s, modelled</text>
+        <text class="s6dA" x="480" y="381" text-anchor="middle">done</text>
+        <text class="s6dL" x="516" y="381">compose up from a clean clone, .env filled</text>
+
+        <text class="s6dN" x="30" y="428">Constructed Stackyard example, the reference kit. Lab numbers are modelled; your own build prints its own.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - every piece of the kit is a file, and the gate is ten rows a reviewer can check without asking you anything</figcaption>
+    </figure>
+
+    <div class="steps">
+      <div class="step">
+        <p><strong>Take rung 6 as the shipped API image.</strong> This is the session 4 lab's final rung, unchanged: a builder stage with <code>--no-cache-dir</code>, a final stage that copies only the installed packages and <code>app/</code>, a non-root user, no secret anywhere, and the CMD in exec form. Read it once more against tonight's three Parts and name the line that does each job. The <code>.dockerignore</code> beside it is the standard one from session 3.</p>
+        <div class="prompt-box good"><span class="label">★ Step 1 · Dockerfile and .dockerignore, as shipped (rung 6, constructed)</span>FROM python:3.12-slim AS builder
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.12-slim
+WORKDIR /app
+RUN useradd --create-home --uid 10001 stackyard
+COPY --from=builder /install /usr/local
+COPY app/ ./app/
+USER stackyard
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# .dockerignore
+# keep the build context to what the image needs
+.git
+.venv
+.env
+data/
+notebooks/
+tests/
+**/__pycache__
+*.pyc
+Dockerfile
+.dockerignore</div>
+      </div>
+      <div class="step">
+        <p><strong>Write the release checklist.</strong> Ten rows, each one checkable by someone who is not you, in a minute, by reading a file or a number. Each row is there because an earlier session found the failure it prevents. Save it as <code>docs/release-checklist.md</code>; run it before any image leaves your hands.</p>
+        <div class="prompt-box good"><span class="label">★ Step 2 · docs/release-checklist.md (Stackyard's values, constructed)</span>[ ] Base pinned to a tag or a digest, with a date to review it
+      python:3.12-slim; review the pin on a set date (tags move: s2, s4)
+[ ] Every package pinned, including the ones nobody named      (s1, s3)
+[ ] .dockerignore excludes .env, .git, .venv and data/          (s3)
+[ ] No secret in ENV, in ARG, or in any layer
+      no ENV password; .env never in the context; build secrets
+      only through --mount=type=secret                        (s6)
+[ ] USER is non-root                                            (s3)
+[ ] Lint clean: the lab's 13 rules, 0 findings on rung 6        (s4)
+[ ] CMD in exec form, ["executable", "param"]                   (s3)
+[ ] Image size recorded: 127.93 MB in the lab                   (s4, s6)
+[ ] Rebuild after a code change recorded: 0.5 s modelled        (s4)
+[ ] docker compose up works from a clean clone with only .env
+      filled in from .env.example                             (s5)</div>
+      </div>
+      <div class="step">
+        <p><strong>Score the whole kit.</strong> Six pieces, one per session, each saved as a file in the repository. Grade each row of the scorecard below 0, 1 or 2, honestly: the point is to find the weakest piece before a teammate does. Here is the list of files you are scoring.</p>
+        <div class="prompt-box good"><span class="label">★ Step 3 · Stackyard's container kit, piece by piece (constructed)</span>s1  docs/dependency-inventory.md       every hidden dependency, with a home
+s2  docs/dockerfile-read.md            layers predicted, wrong guesses kept
+s3  Dockerfile, .dockerignore,         the API image, every package pinned
+    requirements.txt
+s4  rung 6, measured in the lab        0.5 s code-change rebuild, 127.93 MB,
+                                       0 lint findings (modelled)
+s5  compose.yaml, .env.example,        notebook, API, db and the nightly job
+    notebook/Dockerfile                with one command
+s6  docs/release-checklist.md          ten rows, run before every release</div>
+      </div>
+      <div class="step">
+        <p><strong>Answer the question from session 1, in two sentences.</strong> If your laptop died tonight, could a teammate run the project tomorrow with one command, and how long would the rebuild take? Write your own answer first, then compare. Put the final version at the top of the README.</p>
+        <div class="prompt-box good"><span class="label">★ Step 4 · the answer, for the README (constructed)</span>Yes: a teammate with Docker clones the repository, copies .env.example
+to .env, fills in the password, and runs docker compose up.
+The API image's first build takes 36.9 s and a rebuild after a code change
+takes 0.5 s, both modelled in the session 4 lab; your machine will print its own.</div>
+      </div>
+    </div>
+
+    <div class="scorecard" data-title="Stackyard's container kit: six rows" data-foot="A row at 0 is the piece a teammate will ask you about on their first morning." data-msgs="Every row solid. The kit ships, and a teammate could run it without you.|Strong. Fix the weakest row before the image leaves your hands.|Halfway. Pick the two lowest rows and fix only those before you release.|Mostly not yet. Go back to the lowest piece and rebuild it from its session.">
+      <div class="sc-row"><div class="sc-q">s1 · The inventory gives every hidden dependency a home in a file
+        <em>Secret names listed, values never. No path with a person's name in it.</em></div></div>
+      <div class="sc-row"><div class="sc-q">s2 · The Dockerfile read predicts each layer and what it holds
+        <em>Wrong predictions kept, with the correction beside them.</em></div></div>
+      <div class="sc-row"><div class="sc-q">s3 · The API Dockerfile, .dockerignore and requirements.txt are committed, every package pinned
+        <em>All fourteen, including the ones underneath the ones you asked for.</em></div></div>
+      <div class="sc-row"><div class="sc-q">s4 · The cache order is measured, not assumed
+        <em>Rung 6 in the lab: 0.5 s after a code change, modelled, and 0 lint findings.</em></div></div>
+      <div class="sc-row"><div class="sc-q">s5 · compose.yaml starts the notebook, the API and the database with one command
+        <em>The API reaches db by name and waits for it to be healthy; .env.example is committed.</em></div></div>
+      <div class="sc-row"><div class="sc-q">s6 · The release checklist passes for the image you ship
+        <em>Every row done, with the size and the rebuild time written beside it.</em></div></div>
+    </div>
+
+    <div class="callout tip">
+      <p><strong>Hand it to someone, then stay quiet.</strong> The final test of the kit is a colleague with a clean machine, the repository and the README, and you not allowed to speak. Every question they ask is a missing line in one of the six files. Fix it there, not in a chat message, and the next person never has to ask.</p>
+    </div>
+  </section>
+
+  <section class="section" id="exercise">
+    <div class="section-kicker">
+      <span class="klabel">Homework</span>
+      <h2>After the capstone</h2>
+      <span class="tag exercise">30 min</span>
+    </div>
+    <ol>
+      <li><strong>Split one of your images into two stages.</strong> Take a single-stage Dockerfile you own, move the install into a <code>builder</code> stage and <code>COPY --from</code> only what the run needs. If you have Docker, compare <code>docker image ls</code> before and after; your output will differ.</li>
+      <li><strong>Run the wheel check on your requirements.</strong> For every pinned package, look for a <code>cp312</code> (or your Python's) <code>musllinux</code> wheel on PyPI. Write one line in your Dockerfile saying which base you chose and why, with the date you checked.</li>
+      <li><strong>Hunt for secrets in your Dockerfiles.</strong> Search every Dockerfile you own for <code>ENV</code> and <code>ARG</code> lines with PASSWORD, SECRET, TOKEN or KEY in the name, and check that <code>.env</code> is in every <code>.dockerignore</code>. If an image already shipped with one, rotate the secret: removing it from the next build does not remove it from the images already pulled.</li>
+      <li><strong>Run the release checklist on a real image.</strong> Copy the ten rows, run them against one image you or your team ship, and write the result beside each row. Bring the weakest row to your next team review.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="quiz">
+    <div class="section-kicker">
+      <span class="klabel">Check yourself</span>
+      <h2>Three questions</h2>
+    </div>
+    <p>Clear all three and session 6 gets stamped in your passport.</p>
+
+    <div class="quiz-q" data-answer="2">
+      <p class="qtext">1 · A Dockerfile has <code>COPY . .</code> as layer 3, which brings <code>.env</code> in, and <code>RUN rm .env</code> as layer 5. Is the secret out of the image?</p>
+      <button class="qopt" type="button">A · Yes: the file is gone from the final filesystem, so it is gone from the image</button>
+      <button class="qopt" type="button">B · Yes, as long as the image is built with BuildKit</button>
+      <button class="qopt" type="button">C · No: layer 5 only records a deletion on top; layer 3 still holds the bytes, and anyone who pulls the image can unpack that layer</button>
+      <button class="qopt" type="button">D · No, but only because <code>rm</code> needs <code>-f</code> to work inside a container</button>
+      <p class="qwhy">Each layer is a set of filesystem changes, and a later deletion does not rewrite an earlier layer. Keep <code>.env</code> out of the build context with <code>.dockerignore</code>, and pass anything a build step needs with a secret mount, which is never written to a layer.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="0">
+      <p class="qtext">2 · In the session 4 lab, Stackyard's image goes from 248.67 MB at rung 4 to 127.92 MB at rung 5 with multi-stage. What did the multi-stage build leave behind in the builder?</p>
+      <button class="qopt" type="button">A · The pip cache (80.39 MB) and everything else the install needed; only the installed packages in <code>/install</code> crossed into the final stage, beside <code>app/</code></button>
+      <button class="qopt" type="button">B · The installed packages; the final stage downloads them again at start-up</button>
+      <button class="qopt" type="button">C · The base image; the final stage has no base</button>
+      <button class="qopt" type="button">D · The app code; it is mounted at run time instead</button>
+      <p class="qwhy">The builder's pip layer is 160.78 MB: 80.39 MB of installed packages and 80.39 MB of cache. <code>COPY --from=builder /install /usr/local</code> takes only the packages. The rung 4 apt layer does not appear in rung 5 at all, because no apt install is needed.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="3">
+      <p class="qtext">3 · A colleague asks: "Should our Python data API use alpine?" What is the honest answer?</p>
+      <button class="qopt" type="button">A · Always: the base is 18.05 MB against 43.27 MB, so the image is always smaller</button>
+      <button class="qopt" type="button">B · Never: a 2020 test showed alpine builds about 50 times slower</button>
+      <button class="qopt" type="button">C · Only if you switch to distroless first</button>
+      <button class="qopt" type="button">D · It depends on whether every package you need ships a musllinux wheel for your Python; check on PyPI, and weigh the 2020 test against its author's 2026 update before deciding</button>
+      <p class="qwhy">Both sides have evidence with dates. Where wheels exist, alpine installs from ready-built files; where one is missing (scikit-learn 1.9.1, for Stackyard), pip compiles it, and the session 4 lab's alpine side road prints 302.62 MB and 459.5 s, modelled, against 127.93 MB and 36.9 s on slim. Your package list decides.</p>
+    </div>
+
+    <p class="quiz-score"></p>
+  </section>
+
+  <section class="section" id="official">
+    <div class="section-kicker">
+      <span class="klabel">Sources covered</span>
+      <h2>What this session teaches, and where it came from</h2>
+    </div>
+    <div class="covered">
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Multi-stage builds</span><span class="note">Docker Docs, "Multi-stage builds": multiple FROM, AS &lt;NAME&gt;, COPY --from, "leaving behind everything you don't want", stage skipping; read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Build secrets</span><span class="note">Docker Docs, "Build secrets": build args and env vars "persist in the final image"; RUN --mount=type=secret with docker build --secret; read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">python image variants</span><span class="note">docker-library python README: slim lacks compilers, alpine uses musl; sizes from the Docker Hub tag API, read 2026-11-16</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">PEP 656, musllinux</span><span class="note">peps.python.org, status Final; read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">PyPI wheel check</span><span class="note">PyPI JSON API, cp312 x86_64, 2026-11-16: five Stackyard packages ship musllinux wheels, scikit-learn 1.9.1 does not</span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">pythonspeed on Alpine</span><span class="note">I. Turner-Trauring, pythonspeed.com, 2020 test and 2026 update; reported, taught as his claim</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Distroless</span><span class="note">GoogleContainerTools/distroless README: no shell or package manager, static-debian13 around 2 MiB, :debug tags; read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Digests and pinning</span><span class="note">Docker Docs, "Building best practices": tags are mutable, a digest fully fixes the version; read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">DL3064 and the postgres _FILE variables</span><span class="note">hadolint README rule table; docker-library postgres README; read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Stackyard</span><span class="note">Constructed example; lab sizes and seconds are the session 4 bench canon, modelled</span></div>
+    </div>
+    <p class="mono" style="margin-top:14px">Every fact on this page, and its verification tier, is recorded in the course's source map.</p>
+  </section>
+
+  <section class="cheat" id="cheatsheet">
+    <h3>Session 6 cheat sheet <span>· pin this</span></h3>
+    <div class="grid-2">
+      <div class="cheat-item"><b>Multi-stage</b><span>Install in a builder, COPY --from only the result. Caches and compilers stay behind.</span></div>
+      <div class="cheat-item"><b>Slim, alpine, distroless</b><span>glibc with a shell; musl, smaller base; no shell, no pip. Contested for Python.</span></div>
+      <div class="cheat-item"><b>Check the wheels</b><span>One missing musllinux wheel means compiling on alpine. Check every pinned package on PyPI.</span></div>
+      <div class="cheat-item"><b>rm does not erase</b><span>A deleted file stays in the layer that added it. Keep secrets out of the build context.</span></div>
+      <div class="cheat-item"><b>Secrets, by stage</b><span>Build time: --mount=type=secret. Run time: env_file or a _FILE variable. Never ENV or ARG.</span></div>
+      <div class="cheat-item"><b>Release checklist</b><span>Pinned with a review date, non-root, lint clean, size and rebuild recorded, compose up from a clean clone.</span></div>
+    </div>
+  </section>
+
+  <div class="callout next">
+    <span class="nx-pill">Where next</span>
+    <p>Stackyard runs anywhere Docker runs, with one command, and rebuilds in a modelled 0.5 s after a code change. Running containers on a cluster or a cloud service, with Kubernetes or a cloud container runtime, is a different job, and it is not covered in these sessions. The next steps live next door: building images in CI and Docker as part of a data platform in <a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/courses/b1-foundations-repo.html">DataOps, builder session 1</a>; deploying them in <a href="https://phoebefu6.github.io/learn-dataops-with-phoebe/courses/b8-full-cd-capstone.html">DataOps, builder session 8</a>; pushing them to a registry from a pipeline in <a href="https://phoebefu6.github.io/learn-gitlab-with-phoebe/courses/b7-registry-and-templates.html">GitLab, builder session 7</a>; and running them in a cloud with <a href="https://phoebefu6.github.io/learn-aws-with-phoebe/">AWS</a>, <a href="https://phoebefu6.github.io/learn-gcp-with-phoebe/">GCP</a> or <a href="https://phoebefu6.github.io/learn-terraform-with-phoebe/">Terraform</a>.</p>
+  </div>
+
+  <footer class="pagefoot">
+    <span>Session 6 of 6 · learn-docker-containers-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span><a href="05-compose-one-command.html">← Prev: Compose: notebook, API, database, one command</a> &nbsp;·&nbsp; <a href="../index.html">Course home →</a></span>
+  </footer>
+
+</main>
+
+<script src="../assets/app.js?v=1"></script>
+</body>
+</html>

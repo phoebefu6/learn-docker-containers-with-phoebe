@@ -1,0 +1,17 @@
+{
+ "name": "python-dateutil",
+ "version": "4.0.0",
+ "license": "BSD-3-Clause",
+ "files": [
+  {
+   "filename": "python_dateutil-4.0.0-py3-none-any.whl",
+   "size": 92853,
+   "upload_time": "2026-11-01T07:02:40"
+  },
+  {
+   "filename": "python_dateutil-4.0.0.tar.gz",
+   "size": 250419,
+   "upload_time": "2026-11-01T07:02:42"
+  }
+ ]
+}

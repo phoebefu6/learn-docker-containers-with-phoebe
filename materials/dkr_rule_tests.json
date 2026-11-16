@@ -1,0 +1,299 @@
+[
+ {
+  "kind": "lint",
+  "rule": "DL3006",
+  "expect": true,
+  "dockerfile": "FROM python\nWORKDIR /app\nUSER app\nCMD [\"python\", \"main.py\"]\n",
+  "ignore": "",
+  "desc": "untagged base fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3006",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nWORKDIR /app\nUSER app\nCMD [\"python\", \"main.py\"]\n",
+  "ignore": "",
+  "desc": "tagged base passes"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3006",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim AS b\nFROM b\nWORKDIR /app\nUSER app\nCMD [\"python\", \"main.py\"]\n",
+  "ignore": "",
+  "desc": "a stage alias is not an image"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3007",
+  "expect": true,
+  "dockerfile": "FROM python:latest\nWORKDIR /app\nUSER app\nCMD [\"python\", \"main.py\"]\n",
+  "ignore": "",
+  "desc": ":latest fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3007",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim@sha256:0f08\nWORKDIR /app\nUSER app\nCMD [\"python\", \"main.py\"]\n",
+  "ignore": "",
+  "desc": "digest pin passes"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3000",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nWORKDIR app\nUSER app\n",
+  "ignore": "",
+  "desc": "relative WORKDIR fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3000",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nWORKDIR /app\nUSER app\n",
+  "ignore": "",
+  "desc": "absolute WORKDIR passes"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3020",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nADD app/ /app/\nUSER app\n",
+  "ignore": "",
+  "desc": "ADD of a local folder fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3020",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nADD vendor.tar.gz /opt/\nUSER app\n",
+  "ignore": "",
+  "desc": "ADD of an archive passes"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3015",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nRUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*\nUSER app\n",
+  "ignore": "",
+  "desc": "apt without --no-install-recommends fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3015",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nRUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*\nUSER app\n",
+  "ignore": "",
+  "desc": "with the flag passes"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3009",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nRUN apt-get update && apt-get install -y --no-install-recommends curl\nUSER app\n",
+  "ignore": "",
+  "desc": "lists left behind fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3009",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nRUN apt-get update \\\n && apt-get install -y --no-install-recommends curl \\\n && rm -rf /var/lib/apt/lists/*\nUSER app\n",
+  "ignore": "",
+  "desc": "lists removed in the same RUN passes (continuation lines)"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3042",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nRUN pip install -r requirements.txt\nUSER app\n",
+  "ignore": "",
+  "desc": "pip without --no-cache-dir fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3042",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nRUN pip install --no-cache-dir -r requirements.txt\nUSER app\n",
+  "ignore": "",
+  "desc": "--no-cache-dir passes"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3042",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nRUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt\nUSER app\n",
+  "ignore": "",
+  "desc": "a cache mount passes"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3042",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nENV PIP_NO_CACHE_DIR=1\nRUN pip install -r requirements.txt\nUSER app\n",
+  "ignore": "",
+  "desc": "PIP_NO_CACHE_DIR passes"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3025",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nUSER app\nCMD python main.py\n",
+  "ignore": "",
+  "desc": "shell-form CMD fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3025",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nUSER app\nCMD [\"python\", \"main.py\"]\n",
+  "ignore": "",
+  "desc": "exec-form CMD passes"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3002",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nUSER app\nUSER root\n",
+  "ignore": "",
+  "desc": "last USER root fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3002",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nUSER root\nRUN useradd app\nUSER app\n",
+  "ignore": "",
+  "desc": "root then app passes"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3064",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nENV DB_PASSWORD=hunter2\nUSER app\n",
+  "ignore": "",
+  "desc": "a password in ENV fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3064",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nARG API_KEY\nUSER app\n",
+  "ignore": "",
+  "desc": "a key name in ARG fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DL3064",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nENV APP_PORT=8000\nUSER app\n",
+  "ignore": "",
+  "desc": "an ordinary ENV passes"
+ },
+ {
+  "kind": "lint",
+  "rule": "DKR-ORDER",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nWORKDIR /app\nCOPY . .\nRUN pip install --no-cache-dir -r requirements.txt\nUSER app\n",
+  "ignore": ".env\n",
+  "desc": "whole copy before pip fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DKR-ORDER",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nUSER app\n",
+  "ignore": ".env\n",
+  "desc": "requirements first passes"
+ },
+ {
+  "kind": "lint",
+  "rule": "DKR-USER",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nWORKDIR /app\n",
+  "ignore": "",
+  "desc": "no USER in the final stage fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DKR-USER",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim AS b\nWORKDIR /b\nFROM python:3.12-slim\nUSER app\n",
+  "ignore": "",
+  "desc": "USER in the final stage passes even if the builder has none"
+ },
+ {
+  "kind": "lint",
+  "rule": "DKR-CONTEXT",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nWORKDIR /app\nCOPY . .\nUSER app\n",
+  "ignore": "",
+  "desc": "whole copy with no .dockerignore fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DKR-CONTEXT",
+  "expect": true,
+  "dockerfile": "FROM python:3.12-slim\nWORKDIR /app\nCOPY . .\nUSER app\n",
+  "ignore": ".git\n.venv\n",
+  "desc": "an ignore file that forgets .env still fires"
+ },
+ {
+  "kind": "lint",
+  "rule": "DKR-CONTEXT",
+  "expect": false,
+  "dockerfile": "FROM python:3.12-slim\nWORKDIR /app\nCOPY . .\nUSER app\n",
+  "ignore": ".git\n.env\n",
+  "desc": "an ignore file excluding .env passes"
+ },
+ {
+  "kind": "ignore",
+  "path": ".git/objects/pack/p.pack",
+  "ignore": ".git\n",
+  "expect": true,
+  "desc": "a directory pattern excludes its contents"
+ },
+ {
+  "kind": "ignore",
+  "path": "app/__pycache__/x.pyc",
+  "ignore": "*.pyc\n",
+  "expect": false,
+  "desc": "*.pyc only matches at the context root (Go filepath.Match)"
+ },
+ {
+  "kind": "ignore",
+  "path": "app/__pycache__/x.pyc",
+  "ignore": "**/__pycache__\n",
+  "expect": true,
+  "desc": "** matches any depth"
+ },
+ {
+  "kind": "ignore",
+  "path": "data/keep.csv",
+  "ignore": "data/\n!data/keep.csv\n",
+  "expect": false,
+  "desc": "the last matching line wins: an exception re-includes"
+ },
+ {
+  "kind": "ignore",
+  "path": "data/scores.parquet",
+  "ignore": "data/\n!data/keep.csv\n",
+  "expect": true,
+  "desc": "the exception does not re-include other files"
+ },
+ {
+  "kind": "ignore",
+  "path": "README.md",
+  "ignore": "/README.md/\n",
+  "expect": true,
+  "desc": "leading and trailing slashes are ignored"
+ },
+ {
+  "kind": "ignore",
+  "path": "app/main.py",
+  "ignore": "# app\n",
+  "expect": false,
+  "desc": "a comment line excludes nothing"
+ }
+]

@@ -1,0 +1,17 @@
+{
+ "name": "joblib",
+ "version": "1.6.0",
+ "license": "BSD-3-Clause",
+ "files": [
+  {
+   "filename": "joblib-1.6.0-py3-none-any.whl",
+   "size": 306115,
+   "upload_time": "2026-08-31T09:39:02"
+  },
+  {
+   "filename": "joblib-1.6.0.tar.gz",
+   "size": 327903,
+   "upload_time": "2026-08-31T09:39:04"
+  }
+ ]
+}

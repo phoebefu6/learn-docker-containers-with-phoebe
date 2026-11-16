@@ -1,0 +1,337 @@
+{
+ "name": "numpy",
+ "version": "2.5.5",
+ "license": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+ "files": [
+  {
+   "filename": "numpy-2.5.5-cp312-cp312-macosx_10_13_x86_64.whl",
+   "size": 14750374,
+   "upload_time": "2026-11-15T21:30:10"
+  },
+  {
+   "filename": "numpy-2.5.5-cp312-cp312-macosx_11_0_arm64.whl",
+   "size": 10749920,
+   "upload_time": "2026-11-15T21:30:13"
+  },
+  {
+   "filename": "numpy-2.5.5-cp312-cp312-macosx_14_0_arm64.whl",
+   "size": 5513680,
+   "upload_time": "2026-11-15T21:30:15"
+  },
+  {
+   "filename": "numpy-2.5.5-cp312-cp312-macosx_14_0_x86_64.whl",
+   "size": 6797540,
+   "upload_time": "2026-11-15T21:30:17"
+  },
+  {
+   "filename": "numpy-2.5.5-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 15284117,
+   "upload_time": "2026-11-15T21:30:19"
+  },
+  {
+   "filename": "numpy-2.5.5-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 15720599,
+   "upload_time": "2026-11-15T21:30:21"
+  },
+  {
+   "filename": "numpy-2.5.5-cp312-cp312-musllinux_1_2_aarch64.whl",
+   "size": 16503566,
+   "upload_time": "2026-11-15T21:30:24"
+  },
+  {
+   "filename": "numpy-2.5.5-cp312-cp312-musllinux_1_2_x86_64.whl",
+   "size": 17082560,
+   "upload_time": "2026-11-15T21:30:26"
+  },
+  {
+   "filename": "numpy-2.5.5-cp312-cp312-win32.whl",
+   "size": 6146378,
+   "upload_time": "2026-11-15T21:30:28"
+  },
+  {
+   "filename": "numpy-2.5.5-cp312-cp312-win_amd64.whl",
+   "size": 12580189,
+   "upload_time": "2026-11-15T21:30:30"
+  },
+  {
+   "filename": "numpy-2.5.5-cp312-cp312-win_arm64.whl",
+   "size": 10535386,
+   "upload_time": "2026-11-15T21:30:32"
+  },
+  {
+   "filename": "numpy-2.5.5-cp313-cp313-macosx_10_13_x86_64.whl",
+   "size": 14747053,
+   "upload_time": "2026-11-15T21:30:34"
+  },
+  {
+   "filename": "numpy-2.5.5-cp313-cp313-macosx_11_0_arm64.whl",
+   "size": 10744599,
+   "upload_time": "2026-11-15T21:30:36"
+  },
+  {
+   "filename": "numpy-2.5.5-cp313-cp313-macosx_14_0_arm64.whl",
+   "size": 5508218,
+   "upload_time": "2026-11-15T21:30:38"
+  },
+  {
+   "filename": "numpy-2.5.5-cp313-cp313-macosx_14_0_x86_64.whl",
+   "size": 6794377,
+   "upload_time": "2026-11-15T21:30:40"
+  },
+  {
+   "filename": "numpy-2.5.5-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 15278148,
+   "upload_time": "2026-11-15T21:30:41"
+  },
+  {
+   "filename": "numpy-2.5.5-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 15713899,
+   "upload_time": "2026-11-15T21:30:44"
+  },
+  {
+   "filename": "numpy-2.5.5-cp313-cp313-musllinux_1_2_aarch64.whl",
+   "size": 16501259,
+   "upload_time": "2026-11-15T21:30:46"
+  },
+  {
+   "filename": "numpy-2.5.5-cp313-cp313-musllinux_1_2_x86_64.whl",
+   "size": 17077101,
+   "upload_time": "2026-11-15T21:30:48"
+  },
+  {
+   "filename": "numpy-2.5.5-cp313-cp313-win32.whl",
+   "size": 6141929,
+   "upload_time": "2026-11-15T21:30:51"
+  },
+  {
+   "filename": "numpy-2.5.5-cp313-cp313-win_amd64.whl",
+   "size": 12573354,
+   "upload_time": "2026-11-15T21:30:53"
+  },
+  {
+   "filename": "numpy-2.5.5-cp313-cp313-win_arm64.whl",
+   "size": 10528296,
+   "upload_time": "2026-11-15T21:30:55"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314-macosx_10_15_x86_64.whl",
+   "size": 14754557,
+   "upload_time": "2026-11-15T21:30:58"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314-macosx_11_0_arm64.whl",
+   "size": 10754769,
+   "upload_time": "2026-11-15T21:31:00"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314-macosx_14_0_arm64.whl",
+   "size": 5518338,
+   "upload_time": "2026-11-15T21:31:02"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314-macosx_14_0_x86_64.whl",
+   "size": 6800110,
+   "upload_time": "2026-11-15T21:31:04"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 15300777,
+   "upload_time": "2026-11-15T21:31:05"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 15718051,
+   "upload_time": "2026-11-15T21:31:08"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314-musllinux_1_2_aarch64.whl",
+   "size": 16518123,
+   "upload_time": "2026-11-15T21:31:10"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314-musllinux_1_2_x86_64.whl",
+   "size": 17079719,
+   "upload_time": "2026-11-15T21:31:13"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314t-macosx_11_0_arm64.whl",
+   "size": 10857031,
+   "upload_time": "2026-11-15T21:31:21"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314t-macosx_14_0_arm64.whl",
+   "size": 5620763,
+   "upload_time": "2026-11-15T21:31:24"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314t-macosx_14_0_x86_64.whl",
+   "size": 6897520,
+   "upload_time": "2026-11-15T21:31:25"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314t-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 15342131,
+   "upload_time": "2026-11-15T21:31:27"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 15751077,
+   "upload_time": "2026-11-15T21:31:29"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314t-musllinux_1_2_aarch64.whl",
+   "size": 16569544,
+   "upload_time": "2026-11-15T21:31:32"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314t-musllinux_1_2_x86_64.whl",
+   "size": 17122494,
+   "upload_time": "2026-11-15T21:31:34"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314t-win32.whl",
+   "size": 6350011,
+   "upload_time": "2026-11-15T21:31:36"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314t-win_amd64.whl",
+   "size": 12909875,
+   "upload_time": "2026-11-15T21:31:38"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314t-win_arm64.whl",
+   "size": 10899621,
+   "upload_time": "2026-11-15T21:31:40"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314-win32.whl",
+   "size": 6193548,
+   "upload_time": "2026-11-15T21:31:15"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314-win_amd64.whl",
+   "size": 12710543,
+   "upload_time": "2026-11-15T21:31:17"
+  },
+  {
+   "filename": "numpy-2.5.5-cp314-cp314-win_arm64.whl",
+   "size": 10812026,
+   "upload_time": "2026-11-15T21:31:19"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315-macosx_10_15_x86_64.whl",
+   "size": 14752489,
+   "upload_time": "2026-11-15T21:31:42"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315-macosx_11_0_arm64.whl",
+   "size": 10753050,
+   "upload_time": "2026-11-15T21:31:45"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315-macosx_14_0_arm64.whl",
+   "size": 5516639,
+   "upload_time": "2026-11-15T21:31:47"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315-macosx_14_0_x86_64.whl",
+   "size": 6797936,
+   "upload_time": "2026-11-15T21:31:49"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 15294336,
+   "upload_time": "2026-11-15T21:31:50"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 15713633,
+   "upload_time": "2026-11-15T21:31:53"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315-musllinux_1_2_aarch64.whl",
+   "size": 16510376,
+   "upload_time": "2026-11-15T21:31:55"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315-musllinux_1_2_x86_64.whl",
+   "size": 17078342,
+   "upload_time": "2026-11-15T21:31:57"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315t-macosx_10_15_x86_64.whl",
+   "size": 14845589,
+   "upload_time": "2026-11-15T21:32:05"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315t-macosx_11_0_arm64.whl",
+   "size": 10851494,
+   "upload_time": "2026-11-15T21:32:07"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315t-macosx_14_0_arm64.whl",
+   "size": 5615246,
+   "upload_time": "2026-11-15T21:32:09"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315t-macosx_14_0_x86_64.whl",
+   "size": 6890873,
+   "upload_time": "2026-11-15T21:32:11"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315t-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl",
+   "size": 15340077,
+   "upload_time": "2026-11-15T21:32:13"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+   "size": 15752447,
+   "upload_time": "2026-11-15T21:32:15"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315t-musllinux_1_2_aarch64.whl",
+   "size": 16566475,
+   "upload_time": "2026-11-15T21:32:17"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315t-musllinux_1_2_x86_64.whl",
+   "size": 17120613,
+   "upload_time": "2026-11-15T21:32:20"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315t-win32.whl",
+   "size": 6344124,
+   "upload_time": "2026-11-15T21:32:22"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315t-win_amd64.whl",
+   "size": 12898288,
+   "upload_time": "2026-11-15T21:32:23"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315t-win_arm64.whl",
+   "size": 10891314,
+   "upload_time": "2026-11-15T21:32:26"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315-win32.whl",
+   "size": 6192918,
+   "upload_time": "2026-11-15T21:31:59"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315-win_amd64.whl",
+   "size": 12710024,
+   "upload_time": "2026-11-15T21:32:01"
+  },
+  {
+   "filename": "numpy-2.5.5-cp315-cp315-win_arm64.whl",
+   "size": 10814707,
+   "upload_time": "2026-11-15T21:32:03"
+  },
+  {
+   "filename": "numpy-2.5.5.tar.gz",
+   "size": 20873892,
+   "upload_time": "2026-11-15T21:32:28"
+  }
+ ]
+}

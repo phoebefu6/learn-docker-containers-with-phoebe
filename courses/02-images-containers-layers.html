@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- social:start -->
+<meta name="description" content="Session 2 of 6. An image as a read-only stack of filesystem changes, a container as that stack plus one writable layer, tags against digests, registries and the OCI image format, and a Dockerfile read line by line with its layers predicted.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Learn with Phoebe">
+<meta property="og:title" content="Images, containers, layers: the mental model - learn docker containers with phoebe">
+<meta property="og:description" content="Session 2 of 6. What an image is, what a container adds, why a deleted file still ships, and why a tag is not a version. Read a Dockerfile and predict its layers.">
+<meta property="og:url" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/courses/02-images-containers-layers.html">
+<meta property="og:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Images, containers, layers: the mental model - learn docker containers with phoebe">
+<meta name="twitter:description" content="Session 2 of 6. Images, writable layers, layers as diffs, tags against digests, and a Dockerfile read layer by layer.">
+<meta name="twitter:image" content="https://phoebefu6.github.io/learn-docker-containers-with-phoebe/assets/og-cover.png">
+<!-- social:end -->
+<title>Session 2 · Images, containers, layers - learn docker containers with phoebe</title>
+<link rel="stylesheet" href="../assets/style.css?v=1">
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="wrap">
+    <span class="crumb"><a href="../index.html">learn-docker-containers-with-phoebe</a> / Session 2 of 6</span>
+    <button class="btn" id="toggle-all" type="button">Expand all</button>
+    <button class="btn primary" id="zoom-toggle" type="button">Projector zoom: off</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Learn Docker &amp; Containers with Phoebe · Session 2 of 6</div>
+    <h1>Images, containers, <span class="accent">layers</span>: the mental model</h1>
+    <p class="sub">Most Docker confusion comes from one blurred line: the image and the container are not the same thing. An image is a stack of read-only filesystem changes with a name on top. A container is that stack plus one thin writable layer and a running process. Once the line is sharp, three everyday surprises stop being surprises: where your files went, why the image did not shrink, and why the same tag built something different last week.</p>
+    <div class="chip-row">
+      <span class="chip level">🟢 Foundations</span>
+      <span class="chip audience">Data, analytics and ML people who ship notebooks, APIs and jobs</span>
+      <span class="chip audience">Read and predict, no Docker install needed</span>
+      <span class="chip time">45 min</span>
+    </div>
+    <div class="agenda">
+      <span class="a1" style="flex:1">0-3 · Welcome</span>
+      <span class="a2" style="flex:4">3-18 · Images, layers, tags and digests</span>
+      <span class="a3" style="flex:5">18-40 · Build-along: read a Dockerfile, predict its layers</span>
+      <span class="a4" style="flex:1">40-45 · Q&amp;A</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="section" id="intro">
+    <div class="section-kicker">
+      <span class="klabel">Part 0</span>
+      <h2>Where we start</h2>
+    </div>
+    <p class="lede">Session 1 ended with Stackyard's dependency inventory: every hidden assumption on the analyst's laptop, with a note saying where it will be written down. Tonight is about the thing it gets written into. Before anyone on the team writes a Dockerfile in session 3, everyone should be able to look at one and say what it will produce: how many layers, which one is heavy, which ones rebuild when the code changes, and what name the result will be pulled by. We keep the same running case, the Constructed Stackyard example: a four-person analytics team whose notebook, scoring API, nightly job and Postgres database run on one laptop and nowhere else.</p>
+
+    <div class="legend">
+      <span class="pill">🎫 Clear all three quiz questions to stamp your passport</span>
+      <span class="pill">Live = presented in the 45 minutes</span>
+      <span class="pill">Self-study = the full depth, after class</span>
+      <span class="pill">★ Build-along = do it yourself, in the page</span>
+    </div>
+
+    <div class="callout win">
+      <p><strong>★ What you walk out with tonight.</strong> An annotated read of Stackyard's Dockerfile: every line marked as a layer or as configuration, the biggest layer named with the reason, the lines that rebuild after a code change predicted, and the whole read checked against the numbers the session 4 lab prints. It is piece two of Stackyard's container kit, and the same read works on any Dockerfile someone hands you.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-1">
+    <div class="section-kicker">
+      <span class="klabel">Part 1 · covers image vs container and the writable layer</span>
+      <h2>One image, many containers, one writable layer each</h2>
+      <span class="tag concept">6 min live</span>
+    </div>
+    <p class="lede">An image never runs. It is a template, read-only, sitting on disk or in a registry. When you start a container from it, Docker does not copy the image; it puts a small, empty, writable layer on top of the image's layers and starts a process that sees all of them as one filesystem. Start three containers and you get three writable layers over one shared image. The figure is the Stackyard API image as rung 6 of the session 4 ladder builds it (Constructed Stackyard example), running three times.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three containers, api-1, api-2 and api-3, each with its own writable layer, all sitting on one shared read-only image of four layers. From the top of the image down: COPY app/ 4.26 MB, COPY --from=builder 80.39 MB, RUN useradd 0.01 MB, base python:3.12-slim 43.27 MB, 127.93 MB in total, stored once. Container 2 has written /tmp/scores.csv, and that file exists only in container 2's writable layer. Removing container 2 deletes its writable layer and the file; the image is unchanged.">
+        <defs>
+          <filter id="s2aSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="52" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s2aHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s2aAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s2aH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s2aL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s2aS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s2aC { font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #0E1030; }
+          .s2aW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s2aA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s2aN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s2aH" x="30" y="24">THREE RUNNING CONTAINERS</text>
+
+        <g filter="url(#s2aSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="60" y="38" width="220" height="86" rx="10" transform="rotate(-0.7 170 81)" fill="#FFFFFF"/>
+          <rect x="330" y="38" width="220" height="86" rx="10" transform="rotate(0.5 440 81)" fill="#FFFFFF"/>
+          <rect x="600" y="38" width="220" height="86" rx="10" transform="rotate(-0.4 710 81)" fill="#FFFFFF"/>
+          <rect x="74" y="84" width="192" height="28" rx="6" fill="#EEF1FD"/>
+          <rect x="344" y="84" width="192" height="28" rx="6" fill="#FF9F5A"/>
+          <rect x="614" y="84" width="192" height="28" rx="6" fill="#EEF1FD"/>
+          <path d="M170 128 L250 172" marker-end="url(#s2aAr)"/>
+          <path d="M440 128 L440 172" marker-end="url(#s2aAr)"/>
+          <path d="M710 128 L630 172" marker-end="url(#s2aAr)"/>
+          <rect x="200" y="178" width="480" height="30" rx="6" fill="#01005E"/>
+          <rect x="200" y="214" width="480" height="30" rx="6" fill="#01005E"/>
+          <rect x="200" y="250" width="480" height="30" rx="6" fill="#01005E"/>
+          <rect x="200" y="286" width="480" height="30" rx="6" fill="#01005E"/>
+        </g>
+
+        <text class="s2aL" x="84" y="62">container api-1</text>
+        <text class="s2aS" x="84" y="77">a running process</text>
+        <text class="s2aS" x="84" y="102">writable layer: empty</text>
+
+        <text class="s2aL" x="354" y="62">container api-2</text>
+        <text class="s2aS" x="354" y="77">a running process</text>
+        <text class="s2aC" x="354" y="102">writes /tmp/scores.csv</text>
+
+        <text class="s2aL" x="624" y="62">container api-3</text>
+        <text class="s2aS" x="624" y="77">a running process</text>
+        <text class="s2aS" x="624" y="102">writable layer: empty</text>
+
+        <text class="s2aA" x="40" y="198">THE IMAGE</text>
+        <text class="s2aS" x="40" y="216">read-only,</text>
+        <text class="s2aS" x="40" y="232">rung 6, top</text>
+        <text class="s2aS" x="40" y="248">layer first</text>
+
+        <text class="s2aW" x="216" y="198">COPY app/ ./app/</text>
+        <text class="s2aW" x="664" y="198" text-anchor="end">4.26 MB</text>
+        <text class="s2aW" x="216" y="234">COPY --from=builder /install /usr/local</text>
+        <text class="s2aW" x="664" y="234" text-anchor="end">80.39 MB</text>
+        <text class="s2aW" x="216" y="270">RUN useradd ... stackyard</text>
+        <text class="s2aW" x="664" y="270" text-anchor="end">0.01 MB</text>
+        <text class="s2aW" x="216" y="306">FROM python:3.12-slim (base layers)</text>
+        <text class="s2aW" x="664" y="306" text-anchor="end">43.27 MB</text>
+
+        <text class="s2aL" x="696" y="234">127.93 MB in all,</text>
+        <text class="s2aS" x="696" y="252">stored once, shared by</text>
+        <text class="s2aS" x="696" y="268">all three containers</text>
+
+        <text class="s2aN" x="30" y="342">docker rm api-2 deletes its writable layer, and scores.csv with it. The image is untouched.</text>
+        <text class="s2aN" x="30" y="364">Constructed Stackyard example. Layer MB as the session 4 lab prints rung 6. Orange = the only copy of the new file.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - containers share the image and own only their thin writable layer, so anything written there dies with the container</figcaption>
+    </figure>
+
+    <details class="card" open>
+      <summary><span class="mode live">Live</span>Image, container, writable layer<span class="mini">4 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>The image is the template.</strong> Docker's own definition is one line: an image is "a read-only template with instructions for creating a Docker container." Read-only is the important word. Nothing you do inside a running container changes the image it came from.</p>
+        <p><strong>The container is the running instance.</strong> "A container is a runnable instance of an image." When it starts, Docker creates a directory just for that container on top of the image's layers. That directory is the writable layer: every file the process creates, changes or deletes is recorded there, and the image layers underneath stay exactly as they were.</p>
+        <p><strong>Many containers, one image.</strong> Run the Stackyard API three times to handle more requests and you have three writable layers over one copy of the image. That is why starting a second container is fast and cheap: almost nothing is copied.</p>
+        <p><strong>Removing a container removes its writable layer.</strong> If container api-2 wrote <code>/tmp/scores.csv</code> and you remove api-2, the file is gone. For a scratch file that is fine. For Stackyard's Postgres database it would be a disaster: every row lives in the database container's writable layer unless you put the data somewhere that outlives the container. That somewhere is a volume, and session 5 mounts one.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>What docker run actually does<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><code>docker run</code> is three steps in one command. First, if the image is not already on the machine, Docker pulls it from a registry (Docker Hub, unless the name says otherwise). Second, it creates a container: the writable layer on top of the image's layers, plus the configuration the image carries, such as the start command and environment variables. Third, it starts the process.</p>
+        <p>If you have Docker, you can watch the line between image and container. Your output will differ from anything printed here, so read it rather than compare it.</p>
+        <div class="prompt-box good"><span class="label">★ If you have Docker · three containers, one image</span>docker run -d --name demo-1 python:3.12-slim sleep 600
+docker run -d --name demo-2 python:3.12-slim sleep 600
+docker exec demo-2 sh -c 'echo hello &gt; /tmp/note.txt'
+docker exec demo-1 ls /tmp          # empty: demo-1 has its own writable layer
+docker ps                           # two containers, one image name
+docker rm -f demo-2                 # its writable layer, and note.txt, are gone
+docker image ls python              # the image is still there</div>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>Docker's own three definitions.</strong> The Docker overview defines the vocabulary in three short sentences worth memorising as a set: "An image is a read-only template with instructions for creating a Docker container." "A container is a runnable instance of an image." "A Docker registry stores Docker images." Every confusing moment in the first month with Docker is one of those three words used in place of another.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-2">
+    <div class="section-kicker">
+      <span class="klabel">Part 2 · covers layers as filesystem diffs</span>
+      <h2>A layer is a diff, and diffs only add</h2>
+      <span class="tag concept">5 min live</span>
+    </div>
+    <p class="lede">Docker's description of a layer is precise: "Each layer in an image contains a set of filesystem changes - additions, deletions, or modifications." A union filesystem stacks those changes so the container sees one merged tree. Read that model carefully and one consequence falls out that catches almost everyone: a layer can say "this file is deleted", but it cannot reach down and remove the bytes from the layer that added them. The figure is the Constructed Stackyard example at rung 4 of the session 4 ladder, layer by layer.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 366" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rung 4 of the Stackyard ladder as a layer stack, base at the bottom: FROM python:3.12-slim 43.27 MB; WORKDIR 0 MB; RUN apt-get install curl 40.3 MB with the apt lists left in the layer; COPY requirements.txt 0.01 MB; RUN pip install 160.78 MB, of which 80.39 MB is packages and 80.39 MB is pip cache kept in the layer; COPY . . 4.31 MB; and ENV, EXPOSE and CMD as configuration at 0 MB. Total 248.67 MB. A side panel shows a later RUN rm layer that records the deletion of the apt lists while the bytes stay in the earlier layer and ship with the image.">
+        <defs>
+          <filter id="s2bSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="61" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s2bHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+        </defs>
+        <style>
+          .s2bH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s2bL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s2bS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s2bC { font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #0E1030; }
+          .s2bW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s2bA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s2bN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s2bH" x="40" y="36">RUNG 4, TOP LAYER FIRST</text>
+        <text class="s2bA" x="420" y="36">layer size, to scale</text>
+
+        <g filter="url(#s2bSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="40" y="50" width="360" height="30" rx="6" fill="#EEF1FD"/>
+          <rect x="40" y="86" width="360" height="30" rx="6" fill="#FFFFFF"/>
+          <rect x="40" y="122" width="360" height="30" rx="6" fill="#FFFFFF"/>
+          <rect x="40" y="158" width="360" height="30" rx="6" fill="#FFFFFF"/>
+          <rect x="40" y="194" width="360" height="30" rx="6" fill="#FFFFFF"/>
+          <rect x="40" y="230" width="360" height="30" rx="6" fill="#FFFFFF"/>
+          <rect x="40" y="266" width="360" height="30" rx="6" fill="#01005E"/>
+
+          <rect x="420" y="94" width="5" height="14" rx="2" fill="url(#s2bHc)"/>
+          <rect x="420" y="130" width="85" height="14" rx="2" fill="url(#s2bHc)"/>
+          <rect x="505" y="130" width="85" height="14" rx="2" fill="#FF9F5A"/>
+          <rect x="420" y="166" width="2" height="14" rx="1" fill="url(#s2bHc)"/>
+          <rect x="420" y="202" width="43" height="14" rx="2" fill="url(#s2bHc)"/>
+          <rect x="420" y="274" width="46" height="14" rx="2" fill="url(#s2bHc)"/>
+
+          <rect x="630" y="50" width="230" height="246" rx="10" transform="rotate(0.4 745 173)" fill="#FFFFFF"/>
+          <rect x="646" y="86" width="198" height="54" rx="6" fill="#EEF1FD"/>
+          <rect x="646" y="152" width="198" height="84" rx="6" fill="#FFFFFF"/>
+          <rect x="658" y="182" width="174" height="26" rx="6" fill="#FF9F5A"/>
+
+          <rect x="420" y="312" width="16" height="12" rx="2" fill="url(#s2bHc)"/>
+          <rect x="510" y="312" width="16" height="12" rx="2" fill="#FF9F5A"/>
+        </g>
+
+        <text class="s2bL" x="52" y="70">ENV, EXPOSE, CMD: configuration</text>
+        <text class="s2bL" x="390" y="70" text-anchor="end">0 MB</text>
+        <text class="s2bC" x="52" y="105">COPY . . (7 files)</text>
+        <text class="s2bL" x="390" y="105" text-anchor="end">4.31 MB</text>
+        <text class="s2bC" x="52" y="141">RUN pip install -r requirements.txt</text>
+        <text class="s2bL" x="390" y="141" text-anchor="end">160.78 MB</text>
+        <text class="s2bC" x="52" y="177">COPY requirements.txt .</text>
+        <text class="s2bL" x="390" y="177" text-anchor="end">0.01 MB</text>
+        <text class="s2bC" x="52" y="213">RUN apt-get update ... curl</text>
+        <text class="s2bL" x="390" y="213" text-anchor="end">40.3 MB</text>
+        <text class="s2bC" x="52" y="249">WORKDIR /app</text>
+        <text class="s2bL" x="390" y="249" text-anchor="end">0 MB</text>
+        <text class="s2bW" x="52" y="285">FROM python:3.12-slim (base)</text>
+        <text class="s2bW" x="390" y="285" text-anchor="end">43.27 MB</text>
+
+        <text class="s2bS" x="474" y="213">apt lists kept</text>
+
+        <text class="s2bH" x="646" y="74">DELETE IN A LATER LAYER</text>
+        <text class="s2bC" x="658" y="108">RUN rm (the apt lists)</text>
+        <text class="s2bS" x="658" y="126">records a deletion only</text>
+        <text class="s2bC" x="658" y="172">RUN apt-get install curl</text>
+        <text class="s2bL" x="668" y="200">lists: still stored</text>
+        <text class="s2bS" x="658" y="226">ships with every pull</text>
+        <text class="s2bS" x="646" y="262">Fix: install and clean up</text>
+        <text class="s2bS" x="646" y="278">in ONE RUN, as Docker advises</text>
+
+        <text class="s2bS" x="442" y="322">packages</text>
+        <text class="s2bS" x="532" y="322">pip cache, kept in the layer</text>
+
+        <text class="s2bN" x="40" y="350">Rung 4 rows as the session 4 lab prints them, total 248.67 MB; apt and pip-cache sizes are modelled.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - each layer keeps every byte it added, so the pip cache and the apt lists ship with the image even if a later line deletes them</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Which instructions make layers<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>Lines that change files make layers that hold bytes.</strong> <code>RUN</code> runs a command and records every file it added, changed or deleted. <code>COPY</code> brings files in from the build context. <code>ADD</code> does the same and can also fetch remote URLs and unpack local archives, which is why plain <code>COPY</code> is the default choice for local files.</p>
+        <p><strong>Lines that change settings carry configuration.</strong> <code>ENV</code>, <code>EXPOSE</code>, <code>CMD</code>, <code>USER</code> and <code>LABEL</code> change how a container from the image starts: its variables, its documented port, its start command, its user, its metadata. They add no files. Docker's best-practice guide does say that "Each ENV line creates a new intermediate layer", and that is Docker's wording for how the build records each step; in the lab they appear as configuration with 0 MB, because no file bytes are added.</p>
+        <p><strong>WORKDIR sits in between.</strong> It sets the working directory and creates it if it is missing. The session 4 lab counts it as a build step and prints 0 MB for it.</p>
+        <p><strong>The practical read.</strong> When you look for weight in a Dockerfile, look only at <code>RUN</code>, <code>COPY</code>, <code>ADD</code> and the <code>FROM</code> line. Everything else is cheap to move, and session 4 moves several of them on purpose.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>Union filesystem and sharing<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>A union filesystem presents several directories stacked on top of each other as one directory. When the container reads <code>/usr/local/lib/python3.12</code>, it sees the topmost version of every file across all the layers. When a later layer deletes a file, the union view hides it, but the earlier layer still contains it. That is the whole reason the apt lists and the pip cache in rung 4 stay in the image: they were added in a layer, and nothing later can subtract from that layer. Docker's best-practice guide therefore says to combine <code>apt-get update</code> and <code>apt-get install</code> in one <code>RUN</code> and to remove <code>/var/lib/apt/lists</code> to reduce size, all in that same line; the clean-up only saves bytes if it happens before the layer is sealed.</p>
+        <p>The same stacking is what makes layers cheap to share. Layers are stored by content, so two different images built on <code>python:3.12-slim</code> store the slim base once on your disk and in a registry, and a pull downloads only the layers you do not already have. A team that standardises on one base image pays for it once per machine.</p>
+        <p>If you have Docker, <code>docker history python:3.12-slim</code> lists an image's build steps with their sizes; your output will differ, because the tag moves.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>Every official image is built on someone else's layers.</strong> Docker's page on image layers puts the payoff in one line: "Layers let you extend images of others by reusing their base layers". The <code>python:3.12-slim</code> image is itself Debian plus a Python build, and at the time of writing it is <code>3.12.16-slim-trixie</code>, Debian 13 underneath. Stackyard's image will be the slim image plus four or five layers of its own; nobody on the team has to build Debian or Python.</p>
+    </div>
+  </section>
+
+  <section class="section" id="part-3">
+    <div class="section-kicker">
+      <span class="klabel">Part 3 · covers tags, digests, registries and OCI</span>
+      <h2>A tag is a pointer, a digest is the content</h2>
+      <span class="tag concept">4 min live</span>
+    </div>
+    <p class="lede">When Stackyard's Dockerfile says <code>FROM python:3.12-slim</code>, that name is not the image. It is a tag: a label in a registry that points at an image, and that the publisher can point somewhere else tomorrow. Underneath the tag is a digest, a hash of the content, which can never point anywhere else. The figure follows the real <code>python:3.12-slim</code> tag on Docker Hub at the time of writing, read 2026-11-16, down to the layers a Constructed Stackyard example build would pull.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Top panel: the tag python:3.12-slim points to an image index with digest sha256:5e2bdb1b, which points to two manifests, one per platform: linux/amd64, digest sha256:05a994d2, 43.27 MB compressed, and linux/arm64, digest sha256:c61cffc3, 43.54 MB compressed. Each manifest points to its own layers and configuration. Bottom panel, over time: a FROM line using the tag is re-pointed to new image indexes as the publisher updates it, while a FROM line pinned to the digest resolves to the same content at every build until someone changes it.">
+        <defs>
+          <filter id="s2cSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="73" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s2cHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s2cAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s2cH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s2cL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s2cS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s2cC { font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #0E1030; }
+          .s2cW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s2cX { font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #FFFFFF; }
+          .s2cA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s2cN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s2cH" x="30" y="30">WHAT ONE TAG RESOLVES TO, AT THE TIME OF WRITING</text>
+
+        <g filter="url(#s2cSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="92" width="160" height="50" rx="8" transform="rotate(-1 110 117)" fill="#EEF1FD"/>
+          <path d="M194 117 L224 117" marker-end="url(#s2cAr)"/>
+          <rect x="230" y="82" width="200" height="70" rx="10" transform="rotate(0.6 330 117)" fill="#01005E"/>
+          <path d="M434 108 L466 80" marker-end="url(#s2cAr)"/>
+          <path d="M434 126 L466 160" marker-end="url(#s2cAr)"/>
+          <rect x="472" y="50" width="186" height="62" rx="8" transform="rotate(-0.6 565 81)" fill="#FFFFFF"/>
+          <rect x="472" y="130" width="186" height="62" rx="8" transform="rotate(0.5 565 161)" fill="#FFFFFF"/>
+          <path d="M662 81 L694 81" marker-end="url(#s2cAr)"/>
+          <path d="M662 161 L694 161" marker-end="url(#s2cAr)"/>
+          <rect x="700" y="56" width="160" height="50" rx="8" fill="url(#s2cHc)"/>
+          <rect x="700" y="136" width="160" height="50" rx="8" fill="url(#s2cHc)"/>
+
+          <rect x="30" y="268" width="250" height="36" rx="8" transform="rotate(-0.5 155 286)" fill="#EEF1FD"/>
+          <path d="M284 286 L306 286" marker-end="url(#s2cAr)"/>
+          <rect x="310" y="268" width="160" height="36" rx="8" fill="#FFFFFF"/>
+          <path d="M472 286 L486 286" marker-end="url(#s2cAr)"/>
+          <rect x="490" y="268" width="160" height="36" rx="8" fill="#FFFFFF"/>
+          <path d="M652 286 L666 286" marker-end="url(#s2cAr)"/>
+          <rect x="670" y="268" width="160" height="36" rx="8" fill="#FFFFFF"/>
+
+          <rect x="30" y="322" width="250" height="36" rx="8" transform="rotate(0.5 155 340)" fill="#EEF1FD"/>
+          <path d="M284 340 L306 340" marker-end="url(#s2cAr)"/>
+          <rect x="310" y="322" width="520" height="36" rx="8" fill="#FF9F5A"/>
+
+          <path d="M310 384 L830 384" marker-end="url(#s2cAr)"/>
+        </g>
+
+        <text class="s2cA" x="44" y="110">TAG (mutable)</text>
+        <text class="s2cC" x="44" y="128">python:3.12-slim</text>
+
+        <text class="s2cW" x="246" y="108">IMAGE INDEX</text>
+        <text class="s2cX" x="246" y="126">sha256:5e2bdb1b...</text>
+        <text class="s2cX" x="246" y="142">one entry per platform</text>
+
+        <text class="s2cL" x="486" y="72">manifest · linux/amd64</text>
+        <text class="s2cC" x="486" y="89">sha256:05a994d2...</text>
+        <text class="s2cS" x="486" y="104">43.27 MB compressed</text>
+
+        <text class="s2cL" x="486" y="152">manifest · linux/arm64</text>
+        <text class="s2cC" x="486" y="169">sha256:c61cffc3...</text>
+        <text class="s2cS" x="486" y="184">43.54 MB compressed</text>
+
+        <text class="s2cL" x="714" y="78">amd64 layers</text>
+        <text class="s2cL" x="714" y="96">+ config</text>
+        <text class="s2cL" x="714" y="158">arm64 layers</text>
+        <text class="s2cL" x="714" y="176">+ config</text>
+
+        <text class="s2cN" x="30" y="218">Docker Hub tag API, read 2026-11-16. Sizes compressed, as Docker Hub lists them; on disk is larger.</text>
+
+        <text class="s2cH" x="30" y="252">OVER TIME</text>
+        <text class="s2cS" x="480" y="262" text-anchor="middle">re-pointed</text>
+        <text class="s2cS" x="660" y="262" text-anchor="middle">re-pointed</text>
+
+        <text class="s2cC" x="44" y="290">FROM python:3.12-slim</text>
+        <text class="s2cC" x="324" y="290">sha256:5e2bdb1b...</text>
+        <text class="s2cS" x="504" y="290">a new index</text>
+        <text class="s2cS" x="684" y="290">another new index</text>
+
+        <text class="s2cC" x="44" y="344">FROM ...-slim@sha256:5e2b...</text>
+        <text class="s2cL" x="324" y="345">sha256:5e2bdb1b... at every build, until you change the line</text>
+
+        <text class="s2cA" x="310" y="404">time: each pull or build --pull</text>
+
+        <text class="s2cN" x="30" y="428">The later indexes are illustrative: they show the mechanism, not real digests.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - a tag can be re-pointed under you; a digest names exact content, for every platform at once</figcaption>
+    </figure>
+
+    <details class="card">
+      <summary><span class="mode live">Live</span>Pin by tag or by digest<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p><strong>Floating tag.</strong> <code>FROM python:latest</code> means "whatever the publisher calls latest today". At the time of writing that is Python 3.15.2, not the 3.12 Stackyard's laptop runs. Never ship on it.</p>
+        <p><strong>Pinned tag.</strong> <code>FROM python:3.12-slim</code> fixes the Python minor version and the variant. It still moves: Docker's guide says plainly that "Image tags are mutable, meaning a publisher can update a tag to point to a new image." Each move usually brings patch releases and security fixes, which is mostly what you want, but it means two builds a week apart can start from different bytes.</p>
+        <p><strong>Digest pin.</strong> <code>FROM python:3.12-slim@sha256:5e2bdb1b...</code> (the full 64-character hash in a real file) names the content itself. Pinning to a digest fully fixes the version, so every build starts from the same base until a person changes the line. The price is that security fixes arrive only when someone updates the digest on purpose; session 6 puts that decision on the release checklist.</p>
+        <p><strong>Pin the index, not a platform manifest.</strong> The digest worth pinning is the image index, because it still resolves to the right manifest on an Apple silicon laptop (arm64) and on a Linux server (amd64). A manifest digest names one platform's image only, so pinning the amd64 manifest hands an arm64 laptop the amd64 image.</p>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary><span class="mode self">Self-study</span>What is inside an OCI image<span class="mini">3 min</span><span class="caret">▶</span></summary>
+      <div class="body">
+        <p>Docker images follow the Open Container Initiative image format, which is why Podman, containerd and every major registry read the same images. The spec names four parts: an image manifest, an optional image index, a set of filesystem layers, and a configuration. Each layer is referenced by a content-addressable identity, a digest of its bytes, so two images that share a layer share it by hash, not by name.</p>
+        <p>The <strong>index</strong> lists one manifest per platform. The <strong>manifest</strong> lists the layers for that platform, in order, plus the configuration. The <strong>configuration</strong> carries what Part 2 called config lines: environment variables, the start command, the user, the exposed ports. The <strong>layers</strong> are the filesystem diffs. The real <code>python:3.12-slim</code> tag at the time of writing shows the whole chain: one index digest, an amd64 manifest of 43.27 MB and an arm64 manifest of 43.54 MB, compressed.</p>
+        <p><strong>Registries.</strong> A registry stores images by these digests and keeps the tag pointers. Docker looks on Docker Hub by default, so <code>python:3.12-slim</code> means Docker Hub's official python image unless the name starts with another registry's host. Pushing Stackyard's own images to a registry from CI is taught in <a href="https://phoebefu6.github.io/learn-gitlab-with-phoebe/courses/b7-registry-and-templates.html">GitLab, builder session 7</a>.</p>
+        <p>If you have Docker, <code>docker buildx imagetools inspect python:3.12-slim</code> prints the index and its per-platform manifests; your digests will differ, because the tag has moved since this was written.</p>
+      </div>
+    </details>
+
+    <div class="callout example">
+      <span class="ex-pill">Real world</span>
+      <p><strong>The spec that makes images portable.</strong> The OCI Image Format specification defines an image as "an image manifest, an image index (optional), a set of filesystem layers, and a configuration". That one sentence is why the image Docker Desktop builds on a Mac runs unchanged under Podman on a Linux server: both tools read the same four parts, and both find layers by the same content hashes.</p>
+    </div>
+  </section>
+
+  <section class="section" id="demo-1">
+    <div class="section-kicker">
+      <span class="klabel">Build-along</span>
+      <h2>Read a Dockerfile, predict its layers</h2>
+      <span class="tag demo">★ 22 min · everyone builds</span>
+    </div>
+    <p class="lede">Below is the Dockerfile someone on the Stackyard team wrote for the scoring API (Constructed Stackyard example). It is rung 4 of the session 4 ladder: already ordered so the dependencies install before the code is copied, already on a pinned slim base, and still carrying some weight it does not need. Nothing gets built tonight. You will read it the way a reviewer does: line by line, predicting what each line produces, then check your predictions against the numbers the session 4 lab prints for exactly this file.</p>
+
+    <figure class="zoomable">
+      <svg viewBox="0 0 880 410" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The nine lines of the rung 4 Dockerfile on the left, each with an arrow to what it makes on the right. FROM python:3.12-slim makes the base layers, 43.27 MB. WORKDIR /app makes a step of 0 MB. RUN apt-get update and install curl makes a 40.3 MB layer with the apt lists kept. COPY requirements.txt makes 0.01 MB. RUN pip install makes 160.78 MB, of which 80.39 MB is pip cache, the biggest layer. COPY . . makes 4.31 MB of 7 files. ENV, EXPOSE and CMD go to a configuration box: no file bytes, 0 MB.">
+        <defs>
+          <filter id="s2dSk" x="-3%" y="-3%" width="106%" height="106%"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="84" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter>
+          <pattern id="s2dHc" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="7" stroke="#03008C" stroke-width="1" opacity=".5"/></pattern>
+          <marker id="s2dAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#0E1030" stroke-width="1.6" stroke-linecap="round"/></marker>
+        </defs>
+        <style>
+          .s2dH { font: 800 12px Inter, sans-serif; fill: #0E1030; }
+          .s2dL { font: 600 12px Inter, sans-serif; fill: #0E1030; }
+          .s2dS { font: 400 11px Inter, sans-serif; fill: #4A4E6E; }
+          .s2dC { font: 600 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #0E1030; }
+          .s2dW { font: 800 12px Inter, sans-serif; fill: #FFFFFF; }
+          .s2dA { font: 700 11px Inter, sans-serif; fill: #03008C; }
+          .s2dN { font: 400 12px Inter, sans-serif; fill: #4A4E6E; }
+        </style>
+
+        <text class="s2dH" x="30" y="34">THE DOCKERFILE (RUNG 4)</text>
+        <text class="s2dH" x="560" y="34">WHAT EACH LINE MAKES, IN BUILD ORDER</text>
+
+        <g filter="url(#s2dSk)" fill="none" stroke="#0E1030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="30" y="50" width="380" height="26" rx="5" fill="#FFFFFF"/>
+          <rect x="30" y="86" width="380" height="26" rx="5" fill="#FFFFFF"/>
+          <rect x="30" y="122" width="380" height="26" rx="5" fill="#FFFFFF"/>
+          <rect x="30" y="158" width="380" height="26" rx="5" fill="#FFFFFF"/>
+          <rect x="30" y="194" width="380" height="26" rx="5" fill="#FFFFFF"/>
+          <rect x="30" y="230" width="380" height="26" rx="5" fill="#FFFFFF"/>
+          <rect x="30" y="266" width="380" height="26" rx="5" fill="#FFFFFF"/>
+          <rect x="30" y="302" width="380" height="26" rx="5" fill="#FFFFFF"/>
+          <rect x="30" y="338" width="380" height="26" rx="5" fill="#FFFFFF"/>
+
+          <path d="M416 63 L554 63" marker-end="url(#s2dAr)"/>
+          <path d="M416 99 L554 99" marker-end="url(#s2dAr)"/>
+          <path d="M416 135 L554 135" marker-end="url(#s2dAr)"/>
+          <path d="M416 171 L554 171" marker-end="url(#s2dAr)"/>
+          <path d="M416 207 L554 207" marker-end="url(#s2dAr)"/>
+          <path d="M416 243 L554 243" marker-end="url(#s2dAr)"/>
+          <path d="M416 279 L554 279" marker-end="url(#s2dAr)"/>
+          <path d="M416 315 L554 315" marker-end="url(#s2dAr)"/>
+          <path d="M416 351 L554 351" marker-end="url(#s2dAr)"/>
+
+          <rect x="560" y="50" width="290" height="26" rx="5" fill="#01005E"/>
+          <rect x="560" y="86" width="290" height="26" rx="5" fill="url(#s2dHc)"/>
+          <rect x="560" y="122" width="290" height="26" rx="5" fill="url(#s2dHc)"/>
+          <rect x="560" y="158" width="290" height="26" rx="5" fill="url(#s2dHc)"/>
+          <rect x="560" y="194" width="290" height="26" rx="5" fill="#FF9F5A"/>
+          <rect x="560" y="230" width="290" height="26" rx="5" fill="url(#s2dHc)"/>
+          <rect x="560" y="264" width="290" height="102" rx="10" transform="rotate(-0.4 705 315)" fill="#EEF1FD"/>
+        </g>
+
+        <text class="s2dC" x="42" y="67">FROM python:3.12-slim</text>
+        <text class="s2dC" x="42" y="103">WORKDIR /app</text>
+        <text class="s2dC" x="42" y="139">RUN apt-get update &amp;&amp; apt-get install -y curl</text>
+        <text class="s2dC" x="42" y="175">COPY requirements.txt .</text>
+        <text class="s2dC" x="42" y="211">RUN pip install -r requirements.txt</text>
+        <text class="s2dC" x="42" y="247">COPY . .</text>
+        <text class="s2dC" x="42" y="283">ENV DB_PASSWORD=stackyard-dev-123</text>
+        <text class="s2dC" x="42" y="319">EXPOSE 8000</text>
+        <text class="s2dC" x="42" y="355">CMD uvicorn app.main:app --host ... --port 8000</text>
+
+        <text class="s2dW" x="572" y="67">base layers</text>
+        <text class="s2dW" x="838" y="67" text-anchor="end">43.27 MB</text>
+        <text class="s2dL" x="572" y="103">WORKDIR step</text>
+        <text class="s2dL" x="838" y="103" text-anchor="end">0 MB</text>
+        <text class="s2dL" x="572" y="139">curl, apt lists kept</text>
+        <text class="s2dL" x="838" y="139" text-anchor="end">40.3 MB</text>
+        <text class="s2dL" x="572" y="175">requirements.txt</text>
+        <text class="s2dL" x="838" y="175" text-anchor="end">0.01 MB</text>
+        <text class="s2dL" x="572" y="211">packages + pip cache</text>
+        <text class="s2dL" x="838" y="211" text-anchor="end">160.78 MB</text>
+        <text class="s2dL" x="572" y="247">the project, 7 files</text>
+        <text class="s2dL" x="838" y="247" text-anchor="end">4.31 MB</text>
+
+        <text class="s2dA" x="700" y="296">CONFIGURATION</text>
+        <text class="s2dS" x="700" y="314">env, port, start command</text>
+        <text class="s2dS" x="700" y="330">no file bytes: 0 MB</text>
+        <text class="s2dS" x="700" y="346">stored in the image config</text>
+
+        <text class="s2dN" x="30" y="396">Constructed Stackyard example. MB as the session 4 lab prints rung 4; apt and pip-cache sizes are modelled.</text>
+      </svg>
+      <figcaption>🔍 Click to zoom - six lines make layers, three lines make configuration, and one layer is most of the image</figcaption>
+    </figure>
+
+    <div class="steps">
+      <div class="step">
+        <p><strong>Mark every line: layer or configuration.</strong> Read the Dockerfile and write <code>layer</code> next to every line that changes files and <code>config</code> next to every line that only changes how the container starts. Use Part 2's rule: <code>RUN</code>, <code>COPY</code> and <code>ADD</code> change files; <code>ENV</code>, <code>EXPOSE</code>, <code>CMD</code>, <code>USER</code> and <code>LABEL</code> change configuration. Compare with one reading below.</p>
+        <div class="prompt-box good"><span class="label">★ Step 1 · the rung 4 Dockerfile, marked (constructed)</span>FROM python:3.12-slim                                 # base layers (pulled)
+WORKDIR /app                                          # step, 0 MB
+RUN apt-get update &amp;&amp; apt-get install -y curl         # layer
+COPY requirements.txt .                               # layer
+RUN pip install -r requirements.txt                   # layer
+COPY . .                                              # layer
+ENV DB_PASSWORD=stackyard-dev-123                     # config
+EXPOSE 8000                                           # config
+CMD uvicorn app.main:app --host 0.0.0.0 --port 8000   # config</div>
+      </div>
+      <div class="step">
+        <p><strong>Predict the biggest layer, and say why.</strong> Before you look, pick the line you think adds the most bytes and write one sentence of reasoning. The trap is to say "the base image": it is big, but it is not the biggest.</p>
+        <div class="prompt-box good"><span class="label">★ Step 2 · one prediction</span>Biggest: RUN pip install -r requirements.txt
+
+Why: it installs fourteen pinned packages, numpy, pandas, scipy and
+scikit-learn among them, and because the line has no --no-cache-dir,
+pip also keeps its download cache inside the same layer. The packages
+are counted twice: once installed, once cached.
+
+Runner-up: the base image, then the apt line, which keeps the apt
+lists because nothing removes them inside the same RUN.</div>
+      </div>
+      <div class="step">
+        <p><strong>Predict what rebuilds after a one-line change to <code>app/scoring.py</code>.</strong> Find the first line whose input includes that file. That line and every line below it run again; everything above it comes from the cache. This is a preview of session 4, which measures it.</p>
+        <div class="prompt-box good"><span class="label">★ Step 3 · one prediction</span>Cached:   FROM, WORKDIR, RUN apt-get, COPY requirements.txt, RUN pip install
+          (none of their inputs include app/scoring.py)
+Rebuilt:  COPY . .          (its input is the whole project, scoring.py included)
+          ENV, EXPOSE, CMD  (below the changed line; configuration, near-instant)
+
+Why the order is good: the heavy pip layer sits ABOVE the line that
+copies the code, so a code change never reinstalls the packages.</div>
+      </div>
+      <div class="step">
+        <p><strong>Check your read against the lab.</strong> These are the rung 4 rows the session 4 lab prints for exactly this Dockerfile. The base and package sizes are real, read from Docker Hub and PyPI on 2026-11-16; the apt and pip-cache sizes and all the times are modelled. Score yourself one point for each prediction that matched.</p>
+        <div class="prompt-box good"><span class="label">★ Step 4 · what the session 4 lab prints for rung 4</span>FROM python:3.12-slim            43.27 MB   base, compressed
+WORKDIR /app                      0    MB
+RUN apt-get ... curl             40.3  MB   apt lists left in the layer
+COPY requirements.txt .           0.01 MB
+RUN pip install                 160.78 MB   80.39 packages + 80.39 pip cache
+COPY . .                          4.31 MB   7 files
+ENV, EXPOSE, CMD                  0    MB
+Final image                     248.67 MB
+
+Rebuild after an app code change:  0.5 s, 4 of 5 steps from cache (modelled)</div>
+      </div>
+      <div class="step">
+        <p><strong>Write the read down as piece two of the kit.</strong> Save it as <code>docs/dockerfile-read.md</code> in the repository. Keep the predictions you got wrong: they are the most useful lines in the file for the next person who reads a Dockerfile. Note the three things a reviewer would flag; session 4 fixes the weight and session 6 fixes the rest.</p>
+        <div class="prompt-box good"><span class="label">★ Step 5 · docs/dockerfile-read.md (constructed)</span># Stackyard API Dockerfile, read layer by layer
+
+Layers (6 steps that hold files):  base, WORKDIR, apt, requirements, pip, project
+Config (3 lines, 0 MB):            ENV, EXPOSE, CMD
+Biggest layer:  RUN pip install, 160.78 MB, 80.39 MB of it pip cache
+After a code change:  only COPY . . and the config lines below it rebuild
+
+Review flags
+1. pip cache kept in the image      -&gt; add --no-cache-dir, or a multi-stage build (s4)
+2. apt lists kept in the apt layer  -&gt; clean up inside the same RUN (s3)
+3. DB_PASSWORD in an ENV line       -&gt; a secret baked into the image config;
+                                       remove it, pass it at run time (s5, s6)
+4. CMD in shell form                -&gt; exec form, ["uvicorn", "app.main:app", ...] (s3)
+
+Base: python:3.12-slim, a tag; decide on a digest pin before release (s6)</div>
+      </div>
+    </div>
+
+    <div class="scorecard" data-msgs="Every row solid. This piece of the kit is ready for the next one.|Strong. Take the weakest row into the next session and fix that one thing.|Halfway is exactly where this should be. Pick the two lowest rows and only those.|Mostly not yet, which is fine this early. Fix the lowest row before the next session." data-title="Your Dockerfile read: six rows" data-foot="A reviewer who can predict the layers before the build is the cheapest build cache a team has.">
+      <div class="sc-row"><div class="sc-q">Every line is marked layer or configuration
+        <em>RUN, COPY and ADD hold files; ENV, EXPOSE, CMD hold settings.</em></div></div>
+      <div class="sc-row"><div class="sc-q">The biggest layer is named, with the reason
+        <em>The pip install, because the cache is kept alongside the packages.</em></div></div>
+      <div class="sc-row"><div class="sc-q">The rebuild after a code change is predicted from the first line that reads the code
+        <em>COPY . . and everything below it; nothing above.</em></div></div>
+      <div class="sc-row"><div class="sc-q">Bytes a later line cannot remove are spotted
+        <em>The apt lists and the pip cache stay in the layers that wrote them.</em></div></div>
+      <div class="sc-row"><div class="sc-q">The secret in the ENV line is flagged
+        <em>Anything in the image, config included, travels to everyone who pulls it.</em></div></div>
+      <div class="sc-row"><div class="sc-q">The base is identified as a tag, not a fixed version
+        <em>And the read says when a digest pin will be decided.</em></div></div>
+    </div>
+
+    <div class="callout tip">
+      <p><strong>Read the FROM line twice.</strong> It is the one line whose content you did not write and cannot see in the repository. Ask two questions of it every time: which Python and which OS does this tag mean today, and what will it mean the next time someone builds?</p>
+    </div>
+  </section>
+
+  <section class="section" id="exercise">
+    <div class="section-kicker">
+      <span class="klabel">Homework</span>
+      <h2>Before session 3</h2>
+      <span class="tag exercise">30 min</span>
+    </div>
+    <ol>
+      <li><strong>Read one Dockerfile you did not write.</strong> Take any open source data project with a Dockerfile, mark every line layer or configuration, and predict the biggest layer. Write the prediction down before you look anything up.</li>
+      <li><strong>Find the deleted-later bytes.</strong> In that Dockerfile, look for a <code>RUN</code> that removes files a previous <code>RUN</code> added. If you find one, write the single combined line that would actually keep those bytes out.</li>
+      <li><strong>Resolve a tag yourself.</strong> On Docker Hub, open the official <code>python</code> image's tags and find <code>3.12-slim</code>. Note its index digest and the size for your laptop's platform; at the time of writing the amd64 manifest is 43.27 MB compressed. Your numbers will differ, and that difference is the point.</li>
+      <li><strong>Bring your session 1 inventory.</strong> Session 3 turns it into the API's real Dockerfile. Mark which inventory lines will become <code>FROM</code>, <code>RUN</code>, <code>COPY</code> or configuration lines, and which must never go into the image at all.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="quiz">
+    <div class="section-kicker">
+      <span class="klabel">Check yourself</span>
+      <h2>Three questions</h2>
+    </div>
+    <p>Clear all three and session 2 gets stamped in your passport.</p>
+
+    <div class="quiz-q" data-answer="2">
+      <p class="qtext">1 · Stackyard's API container writes <code>/tmp/scores.csv</code>. Someone removes the container with <code>docker rm</code> and starts a new one from the same image. Where is the file?</p>
+      <button class="qopt" type="button">A · In the image, because the container saved it there when it stopped</button>
+      <button class="qopt" type="button">B · In the new container, because both containers share one filesystem</button>
+      <button class="qopt" type="button">C · Gone: it lived only in the removed container's writable layer, and the new container starts with an empty writable layer over the unchanged image</button>
+      <button class="qopt" type="button">D · On Docker Hub, because every write is pushed to the registry</button>
+      <p class="qwhy">The image is read-only and each container gets its own writable layer. Remove the container and its writable layer goes with it. Data that must survive, like Stackyard's Postgres rows, belongs in a volume; session 5 mounts one.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="0">
+      <p class="qtext">2 · A Dockerfile runs <code>RUN apt-get update &amp;&amp; apt-get install -y curl</code>, then on the next line <code>RUN rm -rf /var/lib/apt/lists/*</code>. Why does the image not get smaller?</p>
+      <button class="qopt" type="button">A · Each layer is a set of filesystem changes; the lists were added in the install layer, and the later layer can only record that they are deleted, so the bytes still ship in the earlier layer</button>
+      <button class="qopt" type="button">B · rm does not work inside a Docker build</button>
+      <button class="qopt" type="button">C · Docker restores deleted files at run time</button>
+      <button class="qopt" type="button">D · The apt lists are stored in the image configuration, not in a layer</button>
+      <p class="qwhy">Layers only add. The union view hides the deleted files, but the layer that added them is unchanged and is pulled with the image. Docker's best-practice guide combines update, install and the lists clean-up in one RUN so the bytes never get sealed into a layer.</p>
+    </div>
+
+    <div class="quiz-q" data-answer="3">
+      <p class="qtext">3 · What does <code>FROM python:3.12-slim@sha256:...</code> protect against that <code>FROM python:3.12-slim</code> does not?</p>
+      <button class="qopt" type="button">A · Building on a different Python minor version, such as 3.15</button>
+      <button class="qopt" type="button">B · Secrets leaking into the image</button>
+      <button class="qopt" type="button">C · The base image being too large</button>
+      <button class="qopt" type="button">D · The publisher re-pointing the tag to a new image, so two builds a week apart silently start from different base bytes</button>
+      <p class="qwhy">Both lines already fix the Python minor version and the slim variant. Only the digest fixes the content: tags are mutable, a digest is a hash of exactly one image index. The trade is that security fixes arrive only when you update the digest yourself.</p>
+    </div>
+
+    <p class="quiz-score"></p>
+  </section>
+
+  <section class="section" id="official">
+    <div class="section-kicker">
+      <span class="klabel">Sources covered</span>
+      <h2>What this session teaches, and where it came from</h2>
+    </div>
+    <div class="covered">
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Image, container, registry</span><span class="note">Docker Docs, "Docker overview": the three definitions quoted, Docker Hub as the default registry; read at source 2026-11-16</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Layers as filesystem changes, writable layer, sharing</span><span class="note">Docker Docs, "Understanding the image layers", read at source 2026-11-16</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Mutable tags, digest pins, apt in one RUN, ENV wording</span><span class="note">Docker Docs, "Building best practices", read at source 2026-11-16</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">Manifest, index, layers, configuration</span><span class="note">OCI Image Format Specification, spec.md, read at source</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">python:3.12-slim digests and sizes</span><span class="note">Docker Hub tag API snapshot, 2026-11-16: index and per-platform manifests, compressed sizes; re-verify, the tag moves</span></div>
+      <div class="covered-row"><span class="status pill solid">✓</span><span class="name">python:latest is 3.15.2, 3.12-slim is Debian 13</span><span class="note">docker-library python README, read at source 2026-11-16</span></div>
+      <div class="covered-row"><span class="status pill light">◐</span><span class="name">Stackyard and its rung 4 layer sizes</span><span class="note">Constructed example; base and package sizes are real, apt and pip-cache sizes and all times are modelled by the session 4 lab</span></div>
+    </div>
+    <p class="mono" style="margin-top:14px">Every fact on this page, and its verification tier, is recorded in the course's source map.</p>
+  </section>
+
+  <section class="cheat" id="cheatsheet">
+    <h3>Session 2 cheat sheet <span>· pin this</span></h3>
+    <div class="grid-2">
+      <div class="cheat-item"><b>Image</b><span>A read-only template: a stack of layers plus a configuration.</span></div>
+      <div class="cheat-item"><b>Container</b><span>An image plus its own writable layer and a running process. Remove it and the writable layer goes too.</span></div>
+      <div class="cheat-item"><b>Layer</b><span>A set of filesystem changes. Later layers can hide a file, never remove its bytes.</span></div>
+      <div class="cheat-item"><b>Layer or config</b><span>RUN, COPY, ADD hold files; ENV, EXPOSE, CMD, USER, LABEL hold settings.</span></div>
+      <div class="cheat-item"><b>Tag vs digest</b><span>A tag is a mutable pointer; a digest is a hash of the content. Pin the index digest.</span></div>
+      <div class="cheat-item"><b>OCI image</b><span>Index (optional), manifest per platform, layers, configuration. Docker Hub is the default registry.</span></div>
+    </div>
+  </section>
+
+  <div class="callout next">
+    <span class="nx-pill">Next session</span>
+    <p>Tonight you read a Dockerfile. Session 3 writes one: the Stackyard API's own Dockerfile from the session 1 inventory, line by line, with a <code>.dockerignore</code> that keeps the virtualenv, the data and the <code>.env</code> file out of the build, every package pinned, and a non-root user.</p>
+  </div>
+
+  <footer class="pagefoot">
+    <span>Session 2 of 6 · learn-docker-containers-with-phoebe · by Phoebe Fu &nbsp;·&nbsp; 📚 <a href="https://phoebefu6.github.io/learn-with-phoebe/">Learn with Phoebe ↗</a></span>
+    <span><a href="01-works-on-my-laptop.html">← Prev: Why it works on your laptop and nowhere else</a> &nbsp;·&nbsp; <a href="03-a-dockerfile-for-python.html">Next: Writing a Dockerfile for a Python data project →</a></span>
+  </footer>
+
+</main>
+
+<script src="../assets/app.js?v=1"></script>
+</body>
+</html>
